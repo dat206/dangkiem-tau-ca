@@ -1,30 +1,26 @@
 function App() {
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "#0f172a",
-      color: "white",
-      padding: "40px",
-      fontFamily: "Arial"
-    }}>
-      <h1>Hệ thống Đăng kiểm Tàu cá</h1>
+    // Sử dụng Tailwind CSS v4 để styling (bg-blue-500 để test theo yêu cầu sếp)
+    <div className="min-h-screen bg-blue-500 text-white p-10 font-sans">
+      <h1 className="text-4xl font-bold mb-4">Hệ thống Đăng kiểm Tàu cá</h1>
 
-      <p>Frontend React đã hoạt động 🎉</p>
+      <p className="text-xl">Frontend React + Tailwind CSS đã hoạt động 🎉</p>
 
-      <div style={{
-        marginTop: "20px",
-        padding: "20px",
-        background: "#1e293b",
-        borderRadius: "10px"
-      }}>
-        <h2>Chức năng</h2>
+      <div className="mt-8 p-6 bg-blue-600 rounded-xl shadow-lg">
+        <h2 className="text-2xl font-semibold mb-4 border-b border-blue-400 pb-2">Chức năng hệ thống</h2>
 
-        <ul>
+        <ul className="space-y-2 list-disc list-inside">
           <li>Upload DOCX</li>
-          <li>Parse dữ liệu</li>
-          <li>Lưu database</li>
-          <li>Xuất Excel</li>
+          <li>Parse dữ liệu tự động</li>
+          <li>Lưu trữ vào cơ sở dữ liệu</li>
+          <li>Xuất báo cáo Excel</li>
         </ul>
+      </div>
+
+      <div className="mt-8 p-4 bg-white/10 backdrop-blur-md rounded-lg">
+        <p className="italic">
+          Tailwind CSS v4 is configured and ready!
+        </p>
       </div>
     </div>
   )

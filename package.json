@@ -1,7 +1,11 @@
 {
-  "dependencies": {
-    "axios": "^1.16.0",
-    "react-hot-toast": "^2.6.0",
-    "react-router-dom": "^7.15.0"
+  "name": "dangkiem-tau-ca",
+  "version": "1.0.0",
+  "description": "Hệ thống Đăng kiểm Tàu cá",
+  "scripts": {
+    "dev": "npm run dev --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "lint": "npm run lint --prefix frontend",
+    "backend": "cd backend && uvicorn app.main:app --reload"
   }
 }
