@@ -13,7 +13,7 @@
 ## 2. Chi tiết kỹ thuật
 - **Công nghệ sử dụng:** React 19, Vite 8, Tailwind CSS v4, Axios.
 - **Tính độc lập:** Code frontend được cô lập hoàn toàn trong thư mục `frontend/`. 
-- **Lớp bảo vệ:** Đã sử dụng Proxy để tránh lỗi CORS kể cả khi Backend chưa cấu hình code đầy đủ.
+- **Lớp bảo vệ:** Đã sử dụng Proxy để tránh lỗi CORS kể cả khi Backend chưa cấu hình CORS đầy đủ.
 
 ## 3. Hướng dẫn kiểm tra
 1. Mở terminal tại thư mục gốc `dangkiem-tau-ca`.
@@ -21,4 +21,5 @@
 3. Truy cập: `http://localhost:5173`
 4. Kết quả mong đợi: Giao diện nền màu xanh dương (blue-500) hiển thị dòng chữ "Hệ thống Đăng kiểm Tàu cá".
 
-
+---
+*Người thực hiện: Frontend Developer (Hỗ trợ bởi Antigravity)*
