@@ -1,9 +1,11 @@
 from fastapi import FastAPI
+from app.routers.report import router as report_router
 
 app = FastAPI(
-    title="Đăng kiểm Tàu cá API",
-    version="1.0.0"
+    title="Fishing Vessel Report API"
 )
+
+app.include_router(report_router, prefix="/api")
 
 @app.get("/")
 def home():
