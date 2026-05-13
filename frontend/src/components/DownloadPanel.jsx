@@ -7,7 +7,7 @@
  * - Error state with retry option
  * - File error details
  */
-export default function DownloadPanel({ status, result, onRetry }) {
+export default function DownloadPanel() {
   return (
     <div className="bg-white p-6 rounded-lg">
       <h2>Kết quả xử lý</h2>

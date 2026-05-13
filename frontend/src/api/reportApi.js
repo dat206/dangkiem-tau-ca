@@ -1,10 +1,9 @@
-"""API client for frontend - Gọi backend API"""
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const apiClient = axios.create({
-  baseURL: API_URL,
+  baseURL: `${API_URL}/api`,
   timeout: 60000, // 1 minute timeout for file upload
 });
 

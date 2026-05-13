@@ -1,22 +1,24 @@
-"""Database configuration - SQLAlchemy setup"""
 import os
+
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Đọc DATABASE_URL từ environment
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost/fishing_db")
+load_dotenv()
 
-# Tạo engine
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL is not configured. Copy .env.example to .env and update it.")
+
 engine = create_engine(
     DATABASE_URL,
-    echo=False,  # Set True để debug SQL queries
-    pool_pre_ping=True,  # Kiểm tra connection trước khi dùng
+    echo=False,
+    pool_pre_ping=True,
 )
 
-# Tạo session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Base class cho models
 Base = declarative_base()
 
 

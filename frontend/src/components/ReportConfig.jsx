@@ -7,7 +7,7 @@
  * - Province checkboxes
  * - Form validation
  */
-export default function ReportConfig({ onConfigChange }) {
+export default function ReportConfig() {
   return (
     <div className="bg-white p-6 rounded-lg">
       <h2>Cấu hình báo cáo</h2>
