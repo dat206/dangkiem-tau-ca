@@ -4,15 +4,16 @@ import tailwindcss from '@tailwindcss/vite'
 
 // Cấu hình Vite cho dự án (Issue #003)
 export default defineConfig({
+  // Issue #003: Cấu hình plugins cho React và Tailwind CSS v4
   plugins: [
     react(),
-    tailwindcss(), // Tích hợp Tailwind CSS v4 vào quy trình build
+    tailwindcss(),
   ],
   server: {
-    // Cấu hình Proxy để gọi API backend mà không bị lỗi CORS
+    // Issue #003: Cấu hình Proxy để kết nối Frontend với Backend (FastAPI)
     proxy: {
       '/api': {
-        target: 'http://localhost:8000', // Forward các request bắt đầu bằng /api sang Backend
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
     },
