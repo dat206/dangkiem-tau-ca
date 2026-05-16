@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kế hoạch dự án - Hệ thống Đăng kiểm Tàu cá</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f8f9fa; color: #1a1a2e; font-size: 15px; line-height: 1.7; }
+
+  .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: #fff; padding: 48px 40px 40px; }
+  .header h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+  .header p { color: #a8b2d8; font-size: 15px; }
+  .badge { display: inline-block; background: #e94560; color: #fff; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; margin-left: 10px; vertical-align: middle; }
+
+  .nav { display: flex; gap: 0; background: #fff; border-bottom: 2px solid #e8eaf0; padding: 0 40px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .nav a { padding: 16px 20px; font-size: 13px; font-weight: 600; color: #5f6b7a; text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; cursor: pointer; }
+  .nav a.active, .nav a:hover { color: #0f3460; border-bottom-color: #0f3460; }
+
+  .content { max-width: 1100px; margin: 0 auto; padding: 40px; }
+
+  section { display: none; }
+  section.active { display: block; }
+
+  h2 { font-size: 22px; font-weight: 700; color: #0f3460; margin: 0 0 24px; padding-bottom: 12px; border-bottom: 2px solid #e8eaf0; }
+  h3 { font-size: 16px; font-weight: 700; color: #1a1a2e; margin: 24px 0 12px; }
+  p { margin-bottom: 12px; color: #374151; }
+
+  /* Tech Stack */
+  .stack-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 32px; }
+  .stack-card { background: #fff; border-radius: 12px; border: 1px solid #e8eaf0; padding: 24px; transition: box-shadow 0.2s; }
+  .stack-card:hover { box-shadow: 0 4px 16px rgba(15,52,96,0.1); }
+  .stack-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #6b7280; margin-bottom: 8px; }
+  .stack-name { font-size: 18px; font-weight: 700; color: #0f3460; margin-bottom: 4px; }
+  .stack-desc { font-size: 13px; color: #6b7280; margin-bottom: 12px; line-height: 1.5; }
+  .tag { display: inline-block; background: #eff6ff; color: #1d4ed8; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; margin: 2px; }
+  .tag.green { background: #f0fdf4; color: #166534; }
+  .tag.orange { background: #fff7ed; color: #9a3412; }
+  .tag.purple { background: #faf5ff; color: #6b21a8; }
+
+  .arch-box { background: #fff; border-radius: 12px; border: 1px solid #e8eaf0; padding: 24px; margin-bottom: 20px; }
+  .arch-flow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 16px 0; }
+  .arch-node { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 10px 16px; font-size: 13px; font-weight: 600; color: #1d4ed8; text-align: center; }
+  .arch-arrow { color: #94a3b8; font-size: 20px; }
+
+  /* Issues */
+  .epic-section { margin-bottom: 40px; }
+  .epic-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .epic-badge { display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+  .epic-badge.infra { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+  .epic-badge.parser { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+  .epic-badge.logic { background: #faf5ff; color: #6b21a8; border: 1px solid #e9d5ff; }
+  .epic-badge.excel { background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; }
+  .epic-badge.frontend { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+  .epic-badge.api { background: #f0fdfa; color: #134e4a; border: 1px solid #99f6e4; }
+  .epic-badge.deploy { background: #fefce8; color: #713f12; border: 1px solid #fde68a; }
+  .epic-badge.test { background: #f8fafc; color: #475569; border: 1px solid #cbd5e1; }
+
+  .issue-card { background: #fff; border-radius: 10px; border: 1px solid #e8eaf0; margin-bottom: 14px; overflow: hidden; }
+  .issue-header { display: flex; align-items: center; gap: 12px; padding: 14px 20px; cursor: pointer; user-select: none; }
+  .issue-header:hover { background: #f8fafc; }
+  .issue-id { font-size: 11px; font-weight: 700; color: #9ca3af; min-width: 56px; }
+  .issue-title { flex: 1; font-size: 14px; font-weight: 600; color: #1a1a2e; }
+  .difficulty { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+  .d-easy { background: #f0fdf4; color: #166534; }
+  .d-medium { background: #fff7ed; color: #9a3412; }
+  .d-hard { background: #fef2f2; color: #991b1b; }
+  .skill-tag { font-size: 11px; padding: 2px 8px; border-radius: 4px; border: 1px solid #e8eaf0; color: #6b7280; }
+  .skill-tag.s-good { background: #faf5ff; border-color: #e9d5ff; color: #6b21a8; }
+  .skill-tag.s-avg { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+  .skill-tag.s-all { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+  .chevron { color: #9ca3af; transition: transform 0.2s; }
+  .chevron.open { transform: rotate(90deg); }
+
+  .issue-body { display: none; padding: 0 20px 20px; border-top: 1px solid #f1f5f9; }
+  .issue-body.open { display: block; }
+  .field { margin: 12px 0; }
+  .field-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280; margin-bottom: 4px; }
+  .field-value { font-size: 13px; color: #374151; background: #f8fafc; padding: 10px 14px; border-radius: 6px; border: 1px solid #e8eaf0; line-height: 1.6; }
+  .field-value.story { background: #fffbeb; border-color: #fde68a; font-style: italic; }
+  .field-value.output { background: #f0fdf4; border-color: #bbf7d0; }
+
+  /* GitHub setup */
+  .setup-step { background: #fff; border-radius: 10px; border: 1px solid #e8eaf0; padding: 24px; margin-bottom: 20px; display: flex; gap: 20px; }
+  .step-num { width: 40px; height: 40px; background: #0f3460; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; flex-shrink: 0; }
+  .step-content h3 { margin: 0 0 10px; font-size: 16px; color: #0f3460; }
+  .step-content p { font-size: 13px; }
+  pre { background: #1e293b; color: #e2e8f0; padding: 14px 18px; border-radius: 8px; font-size: 12px; line-height: 1.7; overflow-x: auto; margin: 10px 0; font-family: 'Consolas', monospace; }
+  code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-family: 'Consolas', monospace; color: #be185d; }
+
+  .info-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 14px 18px; font-size: 13px; color: #1e40af; margin: 14px 0; }
+  .warn-box { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 14px 18px; font-size: 13px; color: #92400e; margin: 14px 0; }
+
+  .team-table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+  .team-table th { background: #f8fafc; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280; padding: 10px 14px; text-align: left; border-bottom: 1px solid #e8eaf0; }
+  .team-table td { padding: 10px 14px; font-size: 13px; border-bottom: 1px solid #f1f5f9; }
+  .team-table tr:last-child td { border-bottom: none; }
+
+  @media (max-width: 700px) {
+    .content { padding: 20px; }
+    .nav { padding: 0 16px; overflow-x: auto; }
+    .nav a { padding: 14px 12px; white-space: nowrap; }
+    .header { padding: 32px 20px 28px; }
+    .arch-flow { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🐟 Hệ thống tự động xuất báo cáo Đăng kiểm Tàu cá <span class="badge">FREE STACK</span></h1>
+  <p>Tài liệu kiến trúc, công nghệ &amp; Scrum backlog · Dành cho PM &amp; 15 sinh viên</p>
+</div>
+
+<nav class="nav">
+  <a class="active" onclick="showTab('tech')">⚙️ Công nghệ</a>
+  <a onclick="showTab('arch')">🏗️ Kiến trúc</a>
+  <a onclick="showTab('issues')">📋 Scrum Issues</a>
+  <a onclick="showTab('setup')">🚀 GitHub Setup</a>
+</nav>
+
+<div class="content">
+
+<!-- TAB 1: TECH STACK -->
+<section id="tech" class="active">
+  <h2>Giải pháp công nghệ — toàn bộ miễn phí</h2>
+
+  <div class="info-box">
+    📌 <strong>Bài toán cốt lõi:</strong> Upload nhiều file DOCX (Giấy CN An toàn KT tàu cá) → Parse &amp; lưu vào PostgreSQL → Xuất 2 file Excel (Bảng kê tổng hợp + Báo cáo quý theo tỉnh). Mỗi ngày upload 3–5 file, cuối quý click "Xuất" — hệ thống query DB, sinh Excel trong vài giây.
+  </div>
+
+  <h3>Frontend</h3>
+  <div class="stack-grid">
+    <div class="stack-card">
+      <div class="stack-label">Framework</div>
+      <div class="stack-name">React + Vite</div>
+      <div class="stack-desc">Tạo ứng dụng nhanh, hot reload, build ra SPA. Sinh viên dễ học, tài liệu nhiều.</div>
+      <span class="tag">Vite 5</span><span class="tag">React 18</span><span class="tag green">FREE</span>
+    </div>
+    <div class="stack-card">
+      <div class="stack-label">CSS Framework</div>
+      <div class="stack-name">Tailwind CSS</div>
+      <div class="stack-desc">Utility-first, không cần thiết kế từ đầu, responsive dễ dàng. Cực phù hợp cho sinh viên.</div>
+      <span class="tag">v3.x</span><span class="tag green">FREE</span>
+    </div>
+    <div class="stack-card">
+      <div class="stack-label">UI Components</div>
+      <div class="stack-name">shadcn/ui</div>
+      <div class="stack-desc">Component library đẹp, accessible, copy-paste vào project. Không cần npm install nặng.</div>
+      <span class="tag">Radix UI base</span><span class="tag green">FREE &amp; Open source</span>
+    </div>
+  </div>
+
+  <h3>Backend</h3>
+  <div class="stack-grid">
+    <div class="stack-card">
+      <div class="stack-label">API Framework</div>
+      <div class="stack-name">FastAPI (Python)</div>
+      <div class="stack-desc">REST API cực nhanh, tự sinh OpenAPI docs, async, dễ test. Python rất phù hợp cho xử lý file docx/excel.</div>
+      <span class="tag">Python 3.11+</span><span class="tag">Uvicorn</span><span class="tag green">FREE</span>
+    </div>
+    <div class="stack-card">
+      <div class="stack-label">Parse DOCX</div>
+      <div class="stack-name">python-docx</div>
+      <div class="stack-desc">Đọc bảng, text từ file .docx. Xử lý chính xác cấu trúc giấy chứng nhận tàu cá.</div>
+      <span class="tag">pip install</span><span class="tag green">FREE</span>
+    </div>
+    <div class="stack-card">
+      <div class="stack-label">Xuất Excel</div>
+      <div class="stack-name">openpyxl</div>
+      <div class="stack-desc">Tạo và định dạng file .xlsx giống hệt file mẫu. Hỗ trợ merge cells, style, formula.</div>
+      <span class="tag">pip install</span><span class="tag green">FREE</span>
+    </div>
+    <div class="stack-card">
+      <div class="stack-label">Database</div>
+      <div class="stack-name">PostgreSQL · Neon.tech</div>
+      <div class="stack-desc">Serverless PostgreSQL cloud, free tier 0.5GB. Persistent hoàn toàn — không mất data khi Render restart. Paste connection string vào SQLAlchemy là chạy. Không cần thẻ tín dụng.</div>
+      <span class="tag">SQLAlchemy ORM</span><span class="tag">psycopg2-binary</span><span class="tag green">FREE 0.5GB</span>
+    </div>
+    <div class="stack-card">
+      <div class="stack-label">Regex / NLP</div>
+      <div class="stack-name">re + pandas</div>
+      <div class="stack-desc">Extract data từ văn bản bảng docx. Pandas tính toán tổng hợp, phân nhóm theo tỉnh, Lmax.</div>
+      <span class="tag">Tích hợp sẵn</span><span class="tag green">FREE</span>
+    </div>
+  </div>
+
+  <h3>Deployment — toàn bộ Free tier</h3>
+  <div class="stack-grid">
+    <div class="stack-card">
+      <div class="stack-label">Frontend Hosting</div>
+      <div class="stack-name">Vercel</div>
+      <div class="stack-desc">Deploy React app từ GitHub repo, auto CI/CD mỗi lần push. Free tier dư xài cho doanh nghiệp nhỏ.</div>
+      <span class="tag green">FREE tier</span><span class="tag">Auto deploy</span>
+    </div>
+    <div class="stack-card">
+      <div class="stack-label">Backend Hosting</div>
+      <div class="stack-name">Render.com</div>
+      <div class="stack-desc">Deploy FastAPI miễn phí. Spin-up ~30s sau khi idle (chấp nhận được cho doanh nghiệp nhỏ). Kết nối GitHub trực tiếp.</div>
+      <span class="tag green">FREE tier</span><span class="tag">512MB RAM</span>
+    </div>
+    <div class="stack-card">
+      <div class="stack-label">CI/CD</div>
+      <div class="stack-name">GitHub Actions</div>
+      <div class="stack-desc">Auto test, lint mỗi PR. 2000 phút/tháng miễn phí. Chạy unittest Python + ESLint JS.</div>
+      <span class="tag green">2000 min/tháng FREE</span>
+    </div>
+  </div>
+
+  <div class="warn-box">
+    ⚠️ <strong>Tại sao không dùng SQLite trên Render?</strong> Render Free Tier dùng <em>ephemeral filesystem</em> — mỗi lần deploy hoặc server "ngủ" (sau 15 phút idle), toàn bộ file sinh ra trong quá trình chạy (bao gồm <code>app.db</code> của SQLite) sẽ bị xóa trắng. Doanh nghiệp mất toàn bộ dữ liệu đăng kiểm. PostgreSQL trên Neon.tech tách biệt hoàn toàn khỏi server — an toàn tuyệt đối.
+  </div>
+</section>
+
+<!-- TAB 2: ARCHITECTURE -->
+<section id="arch">
+  <h2>Sơ đồ kiến trúc hệ thống</h2>
+
+  <div class="arch-box">
+    <h3>Luồng xử lý chính</h3>
+    <div class="arch-flow">
+      <div class="arch-node">👤 User<br><small>Upload DOCX files</small></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node">⚛️ React SPA<br><small>Vercel</small></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node">🐍 FastAPI<br><small>Render.com</small></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node">📄 Parser<br><small>python-docx</small></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node">🧮 Business Logic<br><small>Phân loại, tổng hợp</small></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node">📊 Excel Generator<br><small>openpyxl</small></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node">⬇️ Download<br><small>.xlsx file</small></div>
+    </div>
+  </div>
+
+  <div class="arch-box">
+    <h3>Cấu trúc Repository (Monorepo)</h3>
+    <pre>fishing-vessel-report/
+├── frontend/                   # React + Vite app
+│   ├── src/
+│   │   ├── components/         # UI components
+│   │   │   ├── FileUpload.jsx  # Drag & drop DOCX
+│   │   │   ├── ReportConfig.jsx # Chọn quý, năm, tỉnh
+│   │   │   └── DownloadPanel.jsx
+│   │   ├── api/                # API client
+│   │   └── App.jsx
+│   ├── package.json
+│   └── vite.config.js
+│
+├── backend/                    # FastAPI app
+│   ├── app/
+│   │   ├── main.py             # FastAPI entry point
+│   │   ├── routers/
+│   │   │   └── report.py       # POST /api/generate-report
+│   │   ├── services/
+│   │   │   ├── docx_parser.py  # Đọc DOCX → dict
+│   │   │   ├── data_processor.py # Phân nhóm, tính tổng
+│   │   │   └── excel_generator.py # Tạo file .xlsx
+│   │   ├── models/
+│   │   │   └── vessel.py       # Pydantic + SQLAlchemy models
+│   │   ├── database.py         # SQLAlchemy engine, session
+│   │   └── utils/
+│   │       └── constants.py    # Tỉnh, nhóm Lmax, vật liệu
+│   ├── alembic/                # DB migrations (version control schema)
+│   │   ├── versions/           # Migration files
+│   │   └── env.py
+│   ├── alembic.ini
+│   ├── tests/
+│   ├── requirements.txt
+│   └── Dockerfile              # Để Render deploy
+│
+├── .github/
+│   └── workflows/
+│       └── ci.yml              # GitHub Actions
+└── README.md</pre>
+  </div>
+
+  <div class="arch-box">
+    <h3>Data Flow — Parse DOCX → Excel</h3>
+    <p><strong>1. Input DOCX</strong> — Giấy CN An toàn KT tàu cá gồm các field quan trọng:</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0">
+      <div><code>Số đăng ký</code> → QN-90599-TS (tỉnh + số)</div>
+      <div><code>Chủ tàu</code> → Họ và tên chủ</div>
+      <div><code>Địa chỉ</code> → Xã/phường, tỉnh</div>
+      <div><code>Công dụng (nghề)</code> → Lưới rê, chụp...</div>
+      <div><code>Vật liệu</code> → Gỗ / Thép / FRP</div>
+      <div><code>Lmax</code> → Chiều dài (m)</div>
+      <div><code>Ne (KW)</code> → Công suất máy</div>
+      <div><code>Cấp tàu</code> → Không hạn chế / Hạn chế I/II/III</div>
+      <div><code>Hình thức KT</code> → Hàng năm / Định kỳ / Trên đà...</div>
+      <div><code>Ngày hiệu lực</code> → Hạn đăng kiểm</div>
+    </div>
+    <p><strong>2. Business Logic</strong> — Phân nhóm theo Lmax (12-15m, 15-20m, 20-24m, 24-30m, ≥30m), phân loại vật liệu, đếm theo hình thức kiểm tra, nhóm theo tỉnh từ mã đăng ký.</p>
+    <p><strong>3. Output Excel</strong> — 2 file: <em>Bảng kê tổng hợp</em> (mỗi tàu 1 dòng) và <em>Báo cáo quý</em> (nhiều sheet theo tỉnh, bảng thống kê).</p>
+  </div>
+</section>
+
+<!-- TAB 3: SCRUM ISSUES -->
+<section id="issues">
+  <h2>Scrum Backlog — Issues chi tiết</h2>
+  <div class="info-box">
+    🎯 Tổng cộng <strong>25 issues</strong> trải đều 4 sprint (~2 tuần/sprint). Mỗi issue có User Story, mô tả, đầu ra và độ khó.
+  </div>
+
+  <!-- EPIC 1 -->
+  <div class="epic-section">
+    <div class="epic-header">
+      <span class="epic-badge infra">EPIC 1</span>
+      <h3 style="margin:0">Cài đặt dự án &amp; Infrastructure</h3>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header" onclick="toggleIssue(this)">
+        <span class="issue-id">#001</span>
+        <span class="issue-title">Khởi tạo Monorepo, cấu trúc thư mục, README</span>
+        <span class="difficulty d-easy">Dễ</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="issue-body">
+        <div class="field"><div class="field-label">User Story</div><div class="field-value story">Là PM, tôi muốn có một repository GitHub được cấu trúc rõ ràng để toàn đội có thể bắt đầu làm việc ngay mà không bị nhầm lẫn về nơi đặt code.</div></div>
+        <div class="field"><div class="field-label">Mô tả</div><div class="field-value">Tạo GitHub repo mới. Tạo cấu trúc thư mục frontend/ và backend/ theo kiến trúc đã thiết kế. Viết README.md tổng quan với hướng dẫn cài đặt local. Thêm .gitignore cho Python và Node. Tạo file .env.example cho cả hai phía.</div></div>
+        <div class="field"><div class="field-label">Đầu ra (Definition of Done)</div><div class="field-value output">✅ Repo public trên GitHub có đủ cấu trúc thư mục<br>✅ README có hướng dẫn setup local (clone → install → run)<br>✅ .gitignore đúng cho Python + Node<br>✅ Branch main được bảo vệ (require PR review)</div></div>
+        <div class="field"><div class="field-label">Gợi ý phân công</div><div class="field-value">1 người — task setup nền tảng, cần hiểu Git flow. Phù hợp làm tech lead khởi động dự án.</div></div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header" onclick="toggleIssue(this)">
+        <span class="issue-id">#001b</span>
+        <span class="issue-title">Khởi tạo PostgreSQL schema trên Neon.tech + migration với Alembic</span>
+        <span class="difficulty d-medium">Trung bình</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="issue-body">
+        <div class="field"><div class="field-label">User Story</div><div class="field-value story">Là developer, tôi muốn có database PostgreSQL thực sự trên cloud, được version-control bằng Alembic, để schema luôn đồng bộ giữa local và production mà không cần sửa tay.</div></div>
+        <div class="field"><div class="field-label">Mô tả</div><div class="field-value">1. Tạo project trên <strong>Neon.tech</strong> (free, không cần thẻ), copy connection string dạng <code>postgresql://user:pass@host/db</code>. 2. Cài <code>alembic</code> + <code>psycopg2-binary</code> vào requirements.txt. 3. Chạy <code>alembic init alembic/</code>, cấu hình <code>alembic.ini</code> đọc DATABASE_URL từ biến môi trường. 4. Viết migration đầu tiên tạo bảng <code>vessels</code> và <code>report_history</code>. 5. Chạy <code>alembic upgrade head</code> — verify bảng tồn tại trên Neon console. Thêm DATABASE_URL vào .env.example.</div></div>
+        <div class="field"><div class="field-label">Đầu ra</div><div class="field-value output">✅ Project Neon.tech tạo thành công, connection string hoạt động<br>✅ <code>alembic upgrade head</code> chạy không lỗi<br>✅ Bảng vessels &amp; report_history xuất hiện trên Neon console<br>✅ Có thể rollback bằng <code>alembic downgrade -1</code><br>✅ DATABASE_URL không hardcode trong code, đọc từ env</div></div>
+        <div class="field"><div class="field-label">Tại sao dùng Alembic thay vì Base.metadata.create_all()?</div><div class="field-value">Alembic version-control schema như Git version-control code. Sau này thêm cột mới, đổi kiểu dữ liệu → chỉ cần tạo migration mới, không cần xóa DB làm lại. Đây là kỹ năng production thực tế cực giá trị cho CV.</div></div>
+        <div class="field"><div class="field-label">Gợi ý phân công</div><div class="field-value">1 người — task độ khó trung bình, cần đọc tài liệu Alembic. Kỹ năng học được rất thực chiến.</div></div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header" onclick="toggleIssue(this)">
+        <span class="issue-id">#002</span>
+        <span class="issue-title">Cài đặt backend FastAPI + cấu hình CORS</span>
+        <span class="difficulty d-easy">Dễ</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="issue-body">
+        <div class="field"><div class="field-label">User Story</div><div class="field-value story">Là developer backend, tôi muốn có một FastAPI app chạy được trên local với endpoint health-check để xác nhận server hoạt động đúng.</div></div>
+        <div class="field"><div class="field-label">Mô tả</div><div class="field-value">Trong thư mục backend/: khởi tạo môi trường ảo Python, cài FastAPI, uvicorn, python-docx, openpyxl, pandas, <strong>psycopg2-binary</strong>, <strong>asyncpg</strong>, SQLAlchemy. Tạo main.py với endpoint GET /health. Cấu hình CORS cho phép frontend gọi API. Cấu hình SQLAlchemy đọc connection string từ biến môi trường <code>DATABASE_URL</code> (không hardcode). Tạo requirements.txt. Viết README cài đặt backend.</div></div>
+        <div class="field"><div class="field-label">Đầu ra</div><div class="field-value output">✅ <code>uvicorn app.main:app --reload</code> chạy thành công<br>✅ GET /health trả về {"status": "ok"}<br>✅ CORS cho phép http://localhost:5173<br>✅ DATABASE_URL đọc từ <code>.env</code>, không hardcode path file<br>✅ requirements.txt đầy đủ dependencies</div></div>
+        <div class="field"><div class="field-label">Gợi ý phân công</div><div class="field-value">1 người biết Python cơ bản. Độ khó thấp — làm quen môi trường FastAPI.</div></div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header" onclick="toggleIssue(this)">
+        <span class="issue-id">#003</span>
+        <span class="issue-title">Cài đặt frontend React + Vite + Tailwind CSS</span>
+        <span class="difficulty d-easy">Dễ</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="issue-body">
+        <div class="field"><div class="field-label">User Story</div><div class="field-value story">Là developer frontend, tôi muốn có một React app với Tailwind đã cài sẵn để bắt đầu xây dựng UI ngay mà không mất thời gian config.</div></div>
+        <div class="field"><div class="field-label">Mô tả</div><div class="field-value">Trong frontend/: chạy <code>npm create vite@latest</code> chọn React. Cài Tailwind CSS theo hướng dẫn chính thức. Tạo folder structure: src/components, src/api, src/hooks. Xóa boilerplate không cần thiết. Cài axios để gọi API.</div></div>
+        <div class="field"><div class="field-label">Đầu ra</div><div class="field-value output">✅ <code>npm run dev</code> chạy thành công tại localhost:5173<br>✅ Tailwind hoạt động (test bằng class bg-blue-500)<br>✅ Folder structure sạch<br>✅ Cấu hình proxy đến backend trong vite.config.js</div></div>
+        <div class="field"><div class="field-label">Gợi ý phân công</div><div class="field-value">1 người biết HTML/CSS cơ bản, đang học React. Độ khó thấp.</div></div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header" onclick="toggleIssue(this)">
+        <span class="issue-id">#004</span>
+        <span class="issue-title">Cài đặt GitHub Actions CI Pipeline</span>
+        <span class="difficulty d-medium">Trung bình</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="issue-body">
+        <div class="field"><div class="field-label">User Story</div><div class="field-value story">Là PM, tôi muốn mỗi PR tự động chạy test và lint để đảm bảo code merge vào main luôn đúng chuẩn.</div></div>
+        <div class="field"><div class="field-label">Mô tả</div><div class="field-value">Tạo .github/workflows/ci.yml. Job 1 (backend): setup Python, install deps, chạy pytest. Job 2 (frontend): setup Node, npm install, chạy ESLint. Trigger khi push vào PR. Bảo vệ branch main yêu cầu CI pass trước khi merge.</div></div>
+        <div class="field"><div class="field-label">Đầu ra</div><div class="field-value output">✅ CI chạy thành công trên GitHub Actions<br>✅ Báo cáo lỗi rõ ràng khi fail<br>✅ Branch protection rules đã bật</div></div>
+        <div class="field"><div class="field-label">Gợi ý phân công</div><div class="field-value">1 người — cần hiểu YAML và CI/CD concept. Độ khó trung bình.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EPIC 2 -->
+  <div class="epic-section">
+    <div class="epic-header">
+      <span class="epic-badge parser">EPIC 2</span>
+      <h3 style="margin:0">DOCX Parser — Đọc dữ liệu từ Giấy Chứng Nhận</h3>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header" onclick="toggleIssue(this)">
+        <span class="issue-id">#005</span>
+        <span class="issue-title">Phân tích cấu trúc file DOCX mẫu &amp; mapping fields</span>
+        <span class="difficulty d-medium">Trung bình</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="issue-body">
+        <div class="field"><div class="field-label">User Story</div><div class="field-value story">Là developer, tôi muốn có một tài liệu mapping rõ ràng giữa vị trí trong DOCX và tên field trong hệ thống để viết parser chính xác.</div></div>
+        <div class="field"><div class="field-label">Mô tả</div><div class="field-value">Dùng python-docx đọc 3 file DOCX mẫu. In ra cấu trúc tất cả bảng (tables), đoạn văn (paragraphs). Xác định vị trí chính xác của từng field: số đăng ký (bảng 1, hàng 1, cột 2), chủ tàu (paragraph sau bảng 1), Lmax (bảng 3, hàng 2, cột 0)... Viết file docs/field_mapping.md.</div></div>
+        <div class="field"><div class="field-label">Đầu ra</div><div class="field-value output">✅ Script in ra cấu trúc DOCX thành công<br>✅ File docs/field_mapping.md với bảng mapping đầy đủ 10+ fields<br>✅ Xác định được các edge case (chữ đậm, ký tự đặc biệt trong ô)</div></div>
+        <div class="field"><div class="field-label">Gợi ý phân công</div><div class="field-value">1 người — cần kỹ năng phân tích và đọc tài liệu thư viện. Độ khó trung bình.</div></div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header" onclick="toggleIssue(this)">
+        <span class="issue-id">#006</span>
+        <span class="issue-title">Viết hàm parse_vessel_certificate(docx_file) → VesselData</span>
+        <span class="difficulty d-hard">Khó</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="issue-body">
+        <div class="field"><div class="field-label">User Story</div><div class="field-value story">Là hệ thống, tôi cần đọc một file DOCX và trả về tất cả thông tin tàu dạng dữ liệu có cấu trúc (dict/object) để xử lý tiếp.</div></div>
+        <div class="field"><div class="field-label">Mô tả</div><div class="field-value">Viết service docx_parser.py. Hàm nhận file DOCX, dùng python-docx đọc bảng. Dùng regex làm sạch text (xóa ký tự thừa, bold markers). Parse: số đăng ký → tách mã tỉnh. Parse Lmax (float). Parse hình thức kiểm tra (Hàng năm/Định kỳ/Trên đà/Giám sát/Cải hoán). Parse cấp tàu từ bảng cấp X. Trả về Pydantic model VesselData.</div></div>
+        <div class="field"><div class="field-label">Đầu ra</div><div class="field-value output">✅ Hàm parse 3 file mẫu ra đúng dữ liệu (test bằng pytest)<br>✅ Xử lý lỗi khi file không đúng format (trả về ParseError rõ ràng)<br>✅ Coverage test ≥ 80%<br>✅ Xử lý được ký tự đặc biệt tiếng Việt</div></div>
+        <div class="field"><div class="field-label">Gợi ý phân công</div><div class="field-value">1 người — task khó nhất trong project, cần thành thạo Python và regex. Nên pair programming (2 người cùng làm).</div></div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header" onclick="toggleIssue(this)">
+        <span class="issue-id">#007</span>
+        <span class="issue-title">Viết Pydantic Models cho VesselData &amp; ReportConfig</span>
+        <span class="difficulty d-easy">Dễ</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="issue-body">
+        <div class="field"><div class="field-label">User Story</div><div class="field-value story">Là developer, tôi muốn có data models rõ ràng để toàn đội hiểu đồng nhất cấu trúc dữ liệu tàu và không bị lỗi type.</div></div>
+        <div class="field"><div class="field-label">Mô tả</div><div class="field-value">Viết models/vessel.py với Pydantic BaseModel. VesselData: registration_number (str), owner_name (str), address (str), province_code (str), lmax (float), power_kw (float), material (Enum: Go/Thep/FRP), inspection_type (Enum), length_group (Enum), valid_until (date), issued_date (date), fishing_gear (str). ReportConfig: quarter (int), year (int), provinces (list[str]).</div></div>
+        <div class="field"><div class="field-label">Đầu ra</div><div class="field-value output">✅ Pydantic models đầy đủ với type hints<br>✅ Enum classes cho material, inspection_type, length_group<br>✅ Validation tự động (lmax > 0, quarter in 1..4)<br>✅ JSON schema có thể dùng làm API docs</div></div>
+        <div class="field"><div class="field-label">Gợi ý phân công</div><div class="field-value">1 người — học được Pydantic và OOP trong Python. Độ khó thấp.</div></div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header" onclick="toggleIssue(this)">
+        <span class="issue-id">#008</span>
+        <span class="issue-title">Unit test cho DOCX Parser với pytest</span>
+        <span class="difficulty d-medium">Trung bình</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="issue-body">
+        <div class="field"><div class="field-label">User Story</div><div class="field-value story">Là developer, tôi muốn có bộ test tự động để đảm bảo parser không bị hỏng khi refactor code sau này.</div></div>
+        <div class="field"><div class="field-label">Mô tả</div><div class="field-value">Viết tests/test_parser.py với pytest. Test case: parse file mẫu 416 → kiểm tra tất cả fields. Test case: parse file 417, 418. Test edge cases: file DOCX thiếu field, file sai format. Dùng fixture để load file. Kiểm tra province_code extract đúng từ "QN-90599-TS".</div></div>
+        <div class="field"><div class="field-label">Đầu ra</div><div class="field-value output">✅ Ít nhất 10 test cases<br>✅ Coverage ≥ 70% cho docx_parser.py<br>✅ pytest chạy pass hết trong CI<br>✅ Test có docstring mô tả rõ test gì</div></div>
+        <div class="field"><div class="field-label">Gợi ý phân công</div><div class="field-value">1 người — task phù hợp để học testing cơ bản. Độ khó trung bình.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EPIC 3 -->
+  <div class="epic-section">
+    <div class="epic-header">
+      <span class="epic-badge logic">EPIC 3</span>
+      <h3 style="margin:0">Business Logic — Xử lý &amp; tổng hợp dữ liệu</h3>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header" onclick="toggleIssue(this)">
+        <span class="issue-id">#009</span>
+        <span class="issue-title">Hàm classify_vessel() — phân nhóm tàu theo Lmax &amp; tỉnh</span>
+        <span class="difficulty d-medium">Trung bình</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="issue-body">
+        <div class="field"><div class="field-label">User Story</div><div class="field-value story">Là hệ thống, tôi cần tự động phân loại mỗi tàu vào nhóm Lmax đúng (12-15m, 15-20m, 20-24m, 24-30m, ≥30m) và tỉnh tương ứng để lập bảng thống kê.</div></div>
+        <div class="field"><div class="field-label">Mô tả</div><div class="field-value">Viết data_processor.py. Hàm classify_length_group(lmax): trả về LengthGroup enum. Hàm extract_province(reg_number): "QN-90599-TS" → "Quảng Ninh". Cần có mapping dict tỉnh (QN, TH, HT, NB, NA...). Hàm aggregate_vessels(vessels): nhóm theo tỉnh → nhóm theo Lmax → đếm theo vật liệu và hình thức kiểm tra.</div></div>
+        <div class="field"><div class="field-label">Đầu ra</div><div class="field-value output">✅ Phân loại đúng Lmax cho 5 nhóm<br>✅ Mapping đủ 10+ tỉnh thành<br>✅ Hàm aggregate trả về cấu trúc dữ liệu dùng được cho Excel generator<br>✅ Unit test với dữ liệu mẫu từ file Excel thực tế</div></div>
+        <div class="field"><div class="field-label">Gợi ý phân công</div><div class="field-value">1 người — logic nghiệp vụ quan trọng, cần đọc hiểu yêu cầu báo cáo. Độ khó trung bình.</div></div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header" onclick="toggleIssue(this)">
+        <span class="issue-id">#010</span>
+        <span class="issue-title">Xử lý batch — parse nhiều DOCX cùng lúc</span>
+        <span class="difficulty d-medium">Trung bình</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="issue-body">
+        <div class="field"><div class="field-label">User Story</div><div class="field-value story">Là người dùng, tôi muốn upload hàng chục file DOCX cùng lúc và nhận báo cáo tổng hợp, không cần upload từng file một.</div></div>
+        <div class="field"><div class="field-label">Mô tả</div><div class="field-value">Endpoint POST /api/process-batch nhận list files. Dùng asyncio hoặc ThreadPoolExecutor parse song song (vì I/O bound). Collect kết quả, xử lý partial failures (1 file lỗi không làm hỏng cả batch). Trả về summary: số file thành công, số lỗi, list chi tiết lỗi.</div></div>
+        <div class="field"><div class="field-label">Đầu ra</div><div class="field-value output">✅ Xử lý được 50+ file trong 1 request<br>✅ Báo lỗi rõ ràng cho từng file lỗi<br>✅ Không crash khi có file không hợp lệ trong batch<br>✅ Response time &lt; 30s cho 50 file</div></div>
+        <div class="field"><div class="field-label">Gợi ý phân công</div><div class="field-value">1 người — cần hiểu async/concurrent programming. Độ khó trung bình, thử thách tốt.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EPIC 4 -->
+  <div class="epic-section">
+    <div class="epic-header">
+      <span class="epic-badge excel">EPIC 4</span>
+      <h3 style="margin:0">Excel Generator — Xuất báo cáo .xlsx</h3>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header" onclick="toggleIssue(this)">
+        <span class="issue-id">#011</span>
+        <span class="issue-title">Tạo file Bảng kê tổng hợp (TỔNG HỢP GHI SỔ)</span>
+        <span class="difficulty d-hard">Khó</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="issue-body">
+        <div class="field"><div class="field-label">User Story</div><div class="field-value story">Là nhân viên đăng kiểm, tôi muốn có file Excel bảng kê theo đúng mẫu cũ, với mỗi tàu là một dòng, đủ tất cả cột để nộp đúng quy định.</div></div>
+        <div class="field"><div class="field-label">Mô tả</div><div class="field-value">Dùng openpyxl tạo file giống TỔNG_HỢP_GHI_SỔ_THỦ_TỤC.xlsx. Sheet "QUÝ X": header tiêu đề đơn vị, bảng với cột TT/Ngày-tháng/Họ tên/Địa chỉ/Số ĐK/Máy KW/Chiều dài/Hình thức KT/Hạn ĐK/Nghề/HN/TĐ/ĐK/GS/L12-15/L15-20/L20-24/Các tỉnh. Điền đúng giá trị số (1, 2, 3, 5, 6, 7...) vào cột tương ứng theo nghề và chiều dài. Format ngày dạng số Excel (date serial).</div></div>
+        <div class="field"><div class="field-label">Đầu ra</div><div class="field-value output">✅ File Excel mở được, đúng mẫu khi so sánh với file gốc<br>✅ Điền đúng giá trị vào đúng cột (HN=1, TĐ=2, ĐK=3, GS=4...)<br>✅ Số thứ tự tự động tăng<br>✅ Ngày hiển thị đúng định dạng</div></div>
+        <div class="field"><div class="field-label">Gợi ý phân công</div><div class="field-value">1 người — task khó về logic nghiệp vụ (giá trị cột 5/6/7 theo nhóm nghề). Nên pair programming.</div></div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header" onclick="toggleIssue(this)">
+        <span class="issue-id">#012</span>
+        <span class="issue-title">Tạo file Báo cáo quý theo tỉnh (BÁO CÁO QUÝ)</span>
+        <span class="difficulty d-hard">Khó</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="issue-body">
+        <div class="field"><div class="field-label">User Story</div><div class="field-value story">Là manager, tôi muốn có file báo cáo quý với mỗi tỉnh là một sheet riêng, thống kê đầy đủ số lượng tàu theo nhóm để nộp lên Sở.</div></div>
+        <div class="field"><div class="field-label">Mô tả</div><div class="field-value">Tạo workbook với nhiều sheet (mỗi tỉnh 1 sheet: Quảng Ninh, Hà Tĩnh, Ninh Bình...). Mỗi sheet: header "Phụ lục X", tiêu đề công ty, tiêu đề báo cáo, bảng 5 nhóm Lmax × vật liệu (Gỗ/Thép/FRP) × hình thức kiểm tra (Đóng mới, Hàng năm, Trên đà, Định kỳ, Cải hoán) × dòng Tổng Cộng. Merge cells header giống file mẫu. Bôi đậm dòng tổng.</div></div>
+        <div class="field"><div class="field-label">Đầu ra</div><div class="field-value output">✅ Đủ sheet cho các tỉnh có tàu trong kỳ báo cáo<br>✅ Merge cells đúng cấu trúc header<br>✅ Số liệu trong bảng khớp với dữ liệu từ parser<br>✅ Dòng Tổng Cộng tính đúng</div></div>
+        <div class="field"><div class="field-label">Gợi ý phân công</div><div class="field-value">1 người — cần làm việc kỹ với openpyxl merge_cells và styles. Độ khó cao.</div></div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header" onclick="toggleIssue(this)">
+        <span class="issue-id">#013</span>
+        <span class="issue-title">Định dạng Excel — border, font, alignment, column width</span>
+        <span class="difficulty d-medium">Trung bình</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="issue-body">
+        <div class="field"><div class="field-label">User Story</div><div class="field-value story">Là người dùng, tôi muốn file Excel xuất ra nhìn chuyên nghiệp, đúng định dạng mẫu để có thể in và nộp ngay mà không cần sửa thêm.</div></div>
+        <div class="field"><div class="field-label">Mô tả</div><div class="field-value">Viết module excel_styles.py chứa các style preset: header_style (bold, centered, border), data_style, total_style (bold, fill màu). Áp dụng auto column width. Căn chỉnh text (center số, left text). Border đầy đủ cho tất cả ô trong bảng. Font chữ Times New Roman hoặc Arial 11.</div></div>
+        <div class="field"><div class="field-label">Đầu ra</div><div class="field-value output">✅ File Excel trông giống hệt file mẫu khi mở Excel<br>✅ Column width tự điều chỉnh theo nội dung<br>✅ Border đầy đủ<br>✅ Dòng header và tổng cộng nổi bật</div></div>
+        <div class="field"><div class="field-label">Gợi ý phân công</div><div class="field-value">1 người — task chi tiết nhưng không phức tạp về logic. Độ khó trung bình, rất phù hợp để làm quen openpyxl.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EPIC 5 -->
+  <div class="epic-section">
+    <div class="epic-header">
+      <span class="epic-badge frontend">EPIC 5</span>
+      <h3 style="margin:0">Frontend UI — Giao diện người dùng</h3>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header" onclick="toggleIssue(this)">
+        <span class="issue-id">#014</span>
+        <span class="issue-title">Component FileUpload — kéo thả &amp; chọn nhiều file DOCX</span>
+        <span class="difficulty d-medium">Trung bình</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="issue-body">
+        <div class="field"><div class="field-label">User Story</div><div class="field-value story">Là nhân viên đăng kiểm, tôi muốn có thể kéo thả hoặc chọn nhiều file DOCX cùng lúc một cách dễ dàng, và thấy danh sách file đã chọn trước khi xử lý.</div></div>
+        <div class="field"><div class="field-label">Mô tả</div><div class="field-value">Tạo component FileUpload.jsx. Hỗ trợ drag & drop với visual feedback (border highlight khi kéo vào). Chọn nhiều file (multiple accept). Filter chỉ nhận .docx. Hiển thị danh sách file đã chọn: tên file, kích thước, nút xóa. Nút "Xử lý X files". Responsive mobile.</div></div>
+        <div class="field"><div class="field-label">Đầu ra</div><div class="field-value output">✅ Drag & drop hoạt động trên Chrome/Firefox<br>✅ Chỉ nhận file .docx, báo lỗi file khác<br>✅ Danh sách file có thể xóa từng file<br>✅ Responsive trên mobile</div></div>
+        <div class="field"><div class="field-label">Gợi ý phân công</div><div class="field-value">1 người — học được React hooks, event handling, File API. Độ khó trung bình.</div></div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header" onclick="toggleIssue(this)">
+        <span class="issue-id">#015</span>
+        <span class="issue-title">Component ReportConfig — form chọn quý, năm, tỉnh</span>
+        <span class="difficulty d-easy">Dễ</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="issue-body">
+        <div class="field"><div class="field-label">User Story</div><div class="field-value story">Là người dùng, tôi muốn cấu hình báo cáo: chọn quý (I/II/III/IV), năm, và danh sách tỉnh cần báo cáo trước khi xuất.</div></div>
+        <div class="field"><div class="field-label">Mô tả</div><div class="field-value">Tạo ReportConfig.jsx. Dropdown chọn quý (I, II, III, IV). Input năm (default năm hiện tại). Checkbox list tỉnh (Quảng Ninh, Thanh Hóa, Hà Tĩnh, Ninh Bình, Nam Định, Nghệ An...). Nút "Chọn tất cả" / "Bỏ chọn tất cả". Submit form validate phải chọn ít nhất 1 tỉnh.</div></div>
+        <div class="field"><div class="field-label">Đầu ra</div><div class="field-value output">✅ Form đầy đủ các field<br>✅ Validation hiển thị lỗi rõ ràng<br>✅ State management đúng (controlled components)<br>✅ Dữ liệu form truyền lên được parent component</div></div>
+        <div class="field"><div class="field-label">Gợi ý phân công</div><div class="field-value">1 người — task phù hợp để học controlled form trong React. Độ khó thấp.</div></div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header" onclick="toggleIssue(this)">
+        <span class="issue-id">#016</span>
+        <span class="issue-title">UI xử lý &amp; loading state — progress bar, kết quả, lỗi</span>
+        <span class="difficulty d-medium">Trung bình</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="issue-body">
+        <div class="field"><div class="field-label">User Story</div><div class="field-value story">Là người dùng, khi tôi nhấn xử lý, tôi muốn thấy tiến trình rõ ràng và biết khi nào xong, kết quả thế nào, có file nào lỗi không.</div></div>
+        <div class="field"><div class="field-label">Mô tả</div><div class="field-value">Tạo ProcessingPanel.jsx. Loading state: spinner + progress bar + "Đang xử lý X/Y files...". Success state: số file thành công, nút download 2 file Excel. Error state: danh sách file lỗi với message cụ thể. Partial success: thông báo rõ ràng. Nút "Xử lý lại" khi có lỗi.</div></div>
+        <div class="field"><div class="field-label">Đầu ra</div><div class="field-value output">✅ 3 state rõ ràng: loading/success/error<br>✅ UX thân thiện (không bị treo trắng màn hình)<br>✅ Có thể thử lại khi lỗi<br>✅ Hiển thị được kết quả partial success</div></div>
+        <div class="field"><div class="field-label">Gợi ý phân công</div><div class="field-value">1 người — học async state management trong React. Độ khó trung bình.</div></div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header" onclick="toggleIssue(this)">
+        <span class="issue-id">#017</span>
+        <span class="issue-title">Trang lịch sử — xem các lần xuất báo cáo trước</span>
+        <span class="difficulty d-medium">Trung bình</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="issue-body">
+        <div class="field"><div class="field-label">User Story</div><div class="field-value story">Là nhân viên, tôi muốn xem lịch sử các báo cáo đã xuất để có thể tải lại hoặc biết đã xử lý những đợt nào rồi.</div></div>
+        <div class="field"><div class="field-label">Mô tả</div><div class="field-value">Tạo HistoryPage.jsx. Gọi API GET /api/reports/history. Hiển thị bảng: STT, Ngày tạo, Quý/Năm, Số file DOCX, Tỉnh, Nút Download. Phân trang (10 records/page). Filter theo năm/quý. Responsive table.</div></div>
+        <div class="field"><div class="field-label">Đầu ra</div><div class="field-value output">✅ Bảng lịch sử load được từ API<br>✅ Phân trang hoạt động<br>✅ Download được báo cáo cũ<br>✅ Filter theo quý/năm</div></div>
+        <div class="field"><div class="field-label">Gợi ý phân công</div><div class="field-value">1–2 người — task cân bằng giữa frontend và API. Độ khó trung bình.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EPIC 6 -->
+  <div class="epic-section">
+    <div class="epic-header">
+      <span class="epic-badge api">EPIC 6</span>
+      <h3 style="margin:0">API Integration &amp; Backend Routes</h3>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header" onclick="toggleIssue(this)">
+        <span class="issue-id">#018</span>
+        <span class="issue-title">API endpoint POST /api/generate-report — nhận files &amp; trả về Excel</span>
+        <span class="difficulty d-hard">Khó</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="issue-body">
+        <div class="field"><div class="field-label">User Story</div><div class="field-value story">Là frontend, tôi cần một endpoint nhận files DOCX và config báo cáo, trả về 2 file Excel dưới dạng download để người dùng lưu về máy.</div></div>
+        <div class="field"><div class="field-label">Mô tả</div><div class="field-value">POST /api/generate-report nhận multipart/form-data: files[] + quarter + year + provinces[]. Gọi batch processor, excel generator. Nén 2 file Excel vào ZIP. Trả về file ZIP với Content-Disposition: attachment. Lưu metadata vào <strong>PostgreSQL</strong> (lịch sử) qua SQLAlchemy. Xử lý timeout cho file lớn.</div></div>
+        <div class="field"><div class="field-label">Đầu ra</div><div class="field-value output">✅ Trả về file ZIP chứa 2 Excel đúng<br>✅ Có thể test bằng Postman/curl với file mẫu<br>✅ Xử lý lỗi: 400 cho file sai, 500 có message rõ<br>✅ API docs tự động tại /docs</div></div>
+        <div class="field"><div class="field-label">Gợi ý phân công</div><div class="field-value">1 người — tích hợp tất cả các service lại với nhau. Độ khó cao.</div></div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header" onclick="toggleIssue(this)">
+        <span class="issue-id">#019</span>
+        <span class="issue-title">API client phía Frontend — axios service layer</span>
+        <span class="difficulty d-easy">Dễ</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="issue-body">
+        <div class="field"><div class="field-label">User Story</div><div class="field-value story">Là developer frontend, tôi muốn có một service layer rõ ràng để gọi API thay vì scatter axios calls khắp components.</div></div>
+        <div class="field"><div class="field-label">Mô tả</div><div class="field-value">Viết src/api/reportApi.js. Hàm generateReport(files, config): tạo FormData, gọi POST /api/generate-report, nhận blob ZIP, trigger download. Hàm getHistory(): GET /api/reports/history. Error handling tập trung (interceptor). Loading state callback. Đọc base URL từ env variable.</div></div>
+        <div class="field"><div class="field-label">Đầu ra</div><div class="field-value output">✅ Các hàm API gọn gàng, có JSDoc<br>✅ Auto download file khi nhận blob<br>✅ Error message từ API hiển thị đúng nơi<br>✅ Base URL config qua VITE_API_URL env var</div></div>
+        <div class="field"><div class="field-label">Gợi ý phân công</div><div class="field-value">1 người — học cách làm việc với API và File Blob. Độ khó thấp.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EPIC 7 -->
+  <div class="epic-section">
+    <div class="epic-header">
+      <span class="epic-badge deploy">EPIC 7</span>
+      <h3 style="margin:0">Deployment — Deploy lên production</h3>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header" onclick="toggleIssue(this)">
+        <span class="issue-id">#020</span>
+        <span class="issue-title">Deploy backend lên Render.com</span>
+        <span class="difficulty d-medium">Trung bình</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="issue-body">
+        <div class="field"><div class="field-label">User Story</div><div class="field-value story">Là PM, tôi muốn backend chạy trên internet để doanh nghiệp có thể dùng mà không cần biết kỹ thuật.</div></div>
+        <div class="field"><div class="field-label">Mô tả</div><div class="field-value">1. <strong>Tạo Neon.tech project</strong>: đăng ký tài khoản (miễn phí, không cần thẻ), tạo database, copy connection string dạng <code>postgresql://...</code>. 2. Viết Dockerfile cho FastAPI. 3. Tạo tài khoản Render, kết nối GitHub repo. 4. Tạo Web Service trên Render: Runtime Docker. 5. <strong>Cấu hình Environment Variables</strong>: thêm <code>DATABASE_URL</code> = connection string từ Neon, <code>ALLOWED_ORIGINS</code>, <code>SECRET_KEY</code>. 6. Test endpoint /health trên URL production. <strong>Không dùng persistent disk</strong> — database đã nằm trên Neon, tách biệt hoàn toàn khỏi Render.</div></div>
+        <div class="field"><div class="field-label">Đầu ra</div><div class="field-value output">✅ API chạy tại URL public của Render<br>✅ /health trả về 200<br>✅ DATABASE_URL trỏ đúng đến Neon, dữ liệu persist sau khi Render restart<br>✅ HTTPS tự động từ Render<br>✅ Auto deploy mỗi khi push lên main</div></div>
+        <div class="field"><div class="field-label">Gợi ý phân công</div><div class="field-value">1 người — DevOps task, học Docker và cloud deployment. Độ khó trung bình.</div></div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header" onclick="toggleIssue(this)">
+        <span class="issue-id">#021</span>
+        <span class="issue-title">Deploy frontend lên Vercel</span>
+        <span class="difficulty d-easy">Dễ</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="issue-body">
+        <div class="field"><div class="field-label">User Story</div><div class="field-value story">Là người dùng, tôi muốn truy cập ứng dụng qua một URL cố định trên internet, không phải chạy local.</div></div>
+        <div class="field"><div class="field-label">Mô tả</div><div class="field-value">Tạo tài khoản Vercel, import GitHub repo. Cấu hình Root Directory là frontend/. Cấu hình env variable VITE_API_URL trỏ đến Render backend URL. Build command: npm run build. Test tất cả chức năng trên production URL. (Optional) Cấu hình custom domain nếu doanh nghiệp có.</div></div>
+        <div class="field"><div class="field-label">Đầu ra</div><div class="field-value output">✅ App chạy tại URL Vercel (.vercel.app)<br>✅ Upload và download hoạt động end-to-end<br>✅ HTTPS<br>✅ Auto deploy khi push main</div></div>
+        <div class="field"><div class="field-label">Gợi ý phân công</div><div class="field-value">1 người — Vercel rất đơn giản, phù hợp để học deployment. Độ khó thấp.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EPIC 8 -->
+  <div class="epic-section">
+    <div class="epic-header">
+      <span class="epic-badge test">EPIC 8</span>
+      <h3 style="margin:0">Testing &amp; QA</h3>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header" onclick="toggleIssue(this)">
+        <span class="issue-id">#022</span>
+        <span class="issue-title">Integration test — end-to-end upload DOCX → download Excel</span>
+        <span class="difficulty d-medium">Trung bình</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="issue-body">
+        <div class="field"><div class="field-label">User Story</div><div class="field-value story">Là PM, tôi muốn có bộ test tự động kiểm tra toàn bộ flow để đảm bảo hệ thống không bị phá vỡ khi thêm feature mới.</div></div>
+        <div class="field"><div class="field-label">Mô tả</div><div class="field-value">Viết integration test với pytest + httpx (test API FastAPI). Test case 1: upload 3 file DOCX mẫu, nhận ZIP, giải nén, verify 2 file Excel có đúng cấu trúc. Test case 2: upload file không phải DOCX, nhận 400 error. Test case 3: upload 1 file hỏng, kiểm tra partial success response. Chạy test trong CI pipeline.</div></div>
+        <div class="field"><div class="field-label">Đầu ra</div><div class="field-value output">✅ 5+ integration test cases<br>✅ Test chạy pass trong CI<br>✅ Test kiểm tra cả success và error paths<br>✅ Test report dễ đọc</div></div>
+        <div class="field"><div class="field-label">Gợi ý phân công</div><div class="field-value">1 người — học integration testing concepts. Độ khó trung bình.</div></div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header" onclick="toggleIssue(this)">
+        <span class="issue-id">#023</span>
+        <span class="issue-title">UAT với doanh nghiệp — kiểm thử thực tế với dữ liệu thật</span>
+        <span class="difficulty d-easy">Dễ</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="issue-body">
+        <div class="field"><div class="field-label">User Story</div><div class="field-value story">Là doanh nghiệp, tôi muốn kiểm tra hệ thống với dữ liệu thật của mình và xác nhận báo cáo xuất ra đúng trước khi sử dụng chính thức.</div></div>
+        <div class="field"><div class="field-label">Mô tả</div><div class="field-value">Chuẩn bị UAT checklist: 10+ kịch bản sử dụng. Cùng nhân viên doanh nghiệp thử với bộ DOCX thực tế. So sánh Excel xuất ra với Excel làm tay của doanh nghiệp. Ghi lại bug, tạo issue mới cho từng bug. Confirm UAT pass trước khi go-live.</div></div>
+        <div class="field"><div class="field-label">Đầu ra</div><div class="field-value output">✅ UAT checklist hoàn thành, ký duyệt<br>✅ 0 critical bug còn tồn đọng<br>✅ Doanh nghiệp xác nhận bằng văn bản<br>✅ Tài liệu hướng dẫn sử dụng (user manual ngắn)</div></div>
+        <div class="field"><div class="field-label">Gợi ý phân công</div><div class="field-value">2–3 người — học cách làm việc với khách hàng và viết test case. Độ khó thấp.</div></div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header" onclick="toggleIssue(this)">
+        <span class="issue-id">#024</span>
+        <span class="issue-title">Viết tài liệu kỹ thuật &amp; hướng dẫn bảo trì</span>
+        <span class="difficulty d-easy">Dễ</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="issue-body">
+        <div class="field"><div class="field-label">User Story</div><div class="field-value story">Là PM, tôi muốn có tài liệu đủ để bất kỳ developer nào sau này cũng có thể tiếp quản và bảo trì hệ thống mà không cần hỏi team cũ.</div></div>
+        <div class="field"><div class="field-label">Mô tả</div><div class="field-value">Viết docs/: ARCHITECTURE.md (kiến trúc tổng thể), API.md (mô tả tất cả endpoints), DEPLOYMENT.md (cách deploy lại từ đầu), TROUBLESHOOTING.md (các lỗi thường gặp và cách fix). Cập nhật README chính với Quick Start guide. Quay video demo ngắn (optional).</div></div>
+        <div class="field"><div class="field-label">Đầu ra</div><div class="field-value output">✅ Đủ 4 file docs<br>✅ Người mới đọc có thể setup local trong 15 phút<br>✅ README có badge CI status<br>✅ Được review bởi ít nhất 1 người khác</div></div>
+        <div class="field"><div class="field-label">Gợi ý phân công</div><div class="field-value">2 người — học cách viết technical documentation. Độ khó thấp.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TAB 4: GITHUB SETUP -->
+<section id="setup">
+  <h2>GitHub Setup — Dành cho PM</h2>
+  <div class="info-box">
+    🔑 Bạn sẽ thực hiện toàn bộ phần này với quyền Admin. Mất khoảng 30-45 phút để hoàn tất.
+  </div>
+
+  <div class="setup-step">
+    <div class="step-num">1</div>
+    <div class="step-content">
+      <h3>Tạo GitHub Organization &amp; Repository</h3>
+      <p>Tạo Organization thay vì repo cá nhân để quản lý team tốt hơn.</p>
+      <pre># Trên GitHub.com:
+# 1. Click avatar → "Your organizations" → "New organization"
+# 2. Chọn Free plan
+# 3. Tên org: ví dụ "fishing-vessel-dk" hoặc tên công ty
+# 4. Tạo repo mới trong org: "fishing-vessel-report"
+# 5. Chọn Public (để deploy Vercel/Render free) hoặc Private</pre>
+    </div>
+  </div>
+
+  <div class="setup-step">
+    <div class="step-num">2</div>
+    <div class="step-content">
+      <h3>Cấu hình Branch Protection Rules</h3>
+      <p>Bắt buộc review trước khi merge vào main — ngăn chặn code lỗi vào production.</p>
+      <pre># Settings → Branches → Add branch protection rule
+Branch name pattern: main
+
+✅ Require a pull request before merging
+  ✅ Require approvals: 1
+✅ Require status checks to pass (CI pipeline)
+✅ Restrict pushes (chỉ PM và tech lead được force push)</pre>
+    </div>
+  </div>
+
+  <div class="setup-step">
+    <div class="step-num">3</div>
+    <div class="step-content">
+      <h3>Tạo GitHub Project (Scrum Board)</h3>
+      <p>Dùng GitHub Projects (beta) có đủ tính năng Scrum miễn phí.</p>
+      <pre># Projects tab → New project → Board template
+# Tạo các columns:
+📋 Backlog         ← Issues chưa bắt đầu
+🏃 Sprint Todo     ← Issues được chọn cho sprint hiện tại
+🔨 In Progress     ← Đang làm (max 2 issues/người)
+👀 In Review       ← Đang chờ review PR
+✅ Done            ← Hoàn thành
+
+# Custom fields cần thêm:
+- Sprint: Number (1, 2, 3, 4)
+- Story Points: Number (1-8)
+- Assignee: Person</pre>
+    </div>
+  </div>
+
+  <div class="setup-step">
+    <div class="step-num">4</div>
+    <div class="step-content">
+      <h3>Tạo Labels cho Issues</h3>
+      <pre># Issues → Labels → Tạo các label sau:
+
+# Type labels:
+🟢 epic         #0052cc
+🔵 feature      #0075ca
+🐛 bug          #d73a4a
+📚 docs         #0075ca
+⚙️ devops       #e4e669
+
+# Epic labels:
+🏗️ epic/infra    #f9d0c4
+📄 epic/parser   #bfd4f2
+🧮 epic/logic    #d4c5f9
+📊 epic/excel    #fbca04
+⚛️ epic/frontend #e4e669
+🌐 epic/api      #c2e0c6
+🚀 epic/deploy   #b60205
+🧪 epic/test     #cccccc
+
+# Difficulty:
+⬜ easy          #e5f0ea
+🟨 medium        #fef2c0
+🟥 hard          #f9d0c4</pre>
+    </div>
+  </div>
+
+  <div class="setup-step">
+    <div class="step-num">5</div>
+    <div class="step-content">
+      <h3>Thêm thành viên &amp; phân quyền</h3>
+      <pre># Organization → People → Invite members
+
+# Roles:
+PM (bạn):           Owner
+Tech Lead (2-3 người): Maintainer - có thể merge PR
+Thành viên còn lại:  Member - chỉ tạo PR</pre>
+      <table class="team-table">
+        <thead><tr><th>Nhóm</th><th>Số lượng</th><th>GitHub Role</th><th>Sprint lead task</th></tr></thead>
+        <tbody>
+          <tr><td>🔧 Tech Lead</td><td>2–3 người</td><td>Maintainer</td><td>EPIC 2, 4, 6 — core logic nặng</td></tr>
+          <tr><td>👥 Thành viên</td><td>12–13 người</td><td>Member</td><td>EPIC 1, 3, 5, 7, 8 — UI, setup, deploy, docs</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="setup-step">
+    <div class="step-num">6</div>
+    <div class="step-content">
+      <h3>Cấu hình Milestones (Sprint)</h3>
+      <pre># Issues → Milestones → New milestone
+
+Sprint 1 - Infrastructure &amp; Setup   (2 tuần): #001-001b-004
+Sprint 2 - Core Backend              (2 tuần): #005-013
+Sprint 3 - Frontend &amp; API            (2 tuần): #014-021
+Sprint 4 - Testing &amp; Deploy          (2 tuần): #022-024</pre>
+    </div>
+  </div>
+
+  <div class="setup-step">
+    <div class="step-num">7</div>
+    <div class="step-content">
+      <h3>Git Flow cho team</h3>
+      <p>Chuẩn hóa cách đặt tên branch và commit message để dễ review.</p>
+      <pre># Đặt tên branch:
+feature/005-docx-parser
+feature/014-file-upload-component
+bugfix/fix-lmax-classification
+docs/update-readme
+
+# Commit message format (Conventional Commits):
+feat: add docx parser for vessel certificate
+fix: handle edge case when lmax is missing
+docs: update API documentation
+test: add integration tests for report generation
+chore: setup GitHub Actions CI
+
+# Pull Request template (tạo file .github/PULL_REQUEST_TEMPLATE.md):
+## Mô tả thay đổi
+...
+## Closes issue
+Closes #XXX
+## Checklist
+- [ ] Code chạy local không lỗi
+- [ ] Có unit test (nếu là feature mới)
+- [ ] Đã tự review code trước khi tạo PR</pre>
+    </div>
+  </div>
+
+  <div class="setup-step">
+    <div class="step-num">8</div>
+    <div class="step-content">
+      <h3>Tạo Scrum Ceremony Schedule</h3>
+      <pre># Gợi ý lịch (2 tuần/sprint):
+📅 Thứ 2 đầu sprint:  Sprint Planning (1h) - phân công issues
+📅 Thứ 4 hàng tuần:  Daily standup async (Slack/Zalo) - 3 câu hỏi:
+                       1. Hôm qua làm gì?
+                       2. Hôm nay làm gì?
+                       3. Có blocker gì không?
+📅 Thứ 6 cuối sprint: Sprint Review (30m) - demo
+                       Sprint Retro (30m) - What went well/bad
+
+# Tool giao tiếp team (miễn phí):
+💬 Slack free tier hoặc Discord
+📹 Google Meet hoặc Discord voice</pre>
+    </div>
+  </div>
+
+  <div class="warn-box">
+    ⚠️ <strong>Lưu ý quan trọng khi làm PM:</strong> Phân công dựa theo <strong>độ khó của task</strong>, không dựa theo đánh giá năng lực cá nhân. Pair programming (2 người làm chung task khó) cực hiệu quả — người hiểu ít học được từ người hiểu nhiều hơn, và người hiểu nhiều củng cố kiến thức bằng cách giải thích. Khuyến khích code review chéo: mọi người đều có thể nhận xét PR của nhau.
+  </div>
+</section>
+
+</div>
+
+<script>
+function showTab(name) {
+  document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav a').forEach(a => a.classList.remove('active'));
+  document.getElementById(name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function toggleIssue(header) {
+  const body = header.nextElementSibling;
+  const chevron = header.querySelector('.chevron');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  chevron.classList.toggle('open', !isOpen);
+}
+</script>
+</body>
+</html>
