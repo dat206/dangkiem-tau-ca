@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 import logging
 
-from app.services.excel_generator import generate_vessel_excel
+from ..services.excel_generator import generate_vessel_excel
 
 
 # Logger setup
