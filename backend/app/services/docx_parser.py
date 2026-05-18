@@ -42,11 +42,9 @@ def parse_vessel_docx(file_path: str) -> VesselData:
     full_text_blocks = []
     tables_data = []
 
-    # Thu thập văn bản từ các đoạn văn (paragraphs)
     for para in doc.paragraphs:
         full_text_blocks.append(clean_text(para.text))
 
-    # Thu thập văn bản từ tất cả các bảng biểu (tables)
     for table in doc.tables:
         table_rows = []
         for row in table.rows:
@@ -55,20 +53,16 @@ def parse_vessel_docx(file_path: str) -> VesselData:
             full_text_blocks.extend(row_data)
         tables_data.append(table_rows)
 
-    # Ghép toàn bộ văn bản lại thành một chuỗi duy nhất phân tách bằng dấu gạch đứng để dễ regex
     full_text = " | ".join(full_text_blocks)
 
-    # 1. Trích xuất Số đăng ký (Ví dụ: QN-90523-TS)
     so_dang_ky_match = re.search(r'Số đăng ký:\s*([A-ZĐa-zđ\d]+-\d+-TS)', full_text, re.IGNORECASE)
     if not so_dang_ky_match:
         raise ParseError("Không tìm thấy Số đăng ký hợp lệ trong tài liệu")
     so_dang_ky = so_dang_ky_match.group(1).strip().upper()
 
-    # 2. Tự động lấy Mã tỉnh từ chữ cái đầu của số đăng ký
     ma_tinh_match = re.match(r'^([A-ZĐ]+)-', so_dang_ky)
     ma_tinh = ma_tinh_match.group(1) if ma_tinh_match else ""
 
-    # 3. Trích xuất Chiều dài lớn nhất Lmax
     lmax_match = re.search(r'Chiều dài,\s*Lmax:\s*([\d,.]+)', full_text, re.IGNORECASE)
     if not lmax_match:
         raise ParseError("Không tìm thấy thông tin Chiều dài Lmax")
@@ -79,27 +73,19 @@ def parse_vessel_docx(file_path: str) -> VesselData:
     except ValueError:
         raise ParseError(f"Định dạng Lmax không hợp lệ: {lmax_str}")
 
-    # 4. Trích xuất Hình thức kiểm tra thông qua Số biên bản
     hinh_thuc_kiem_tra = "Không xác định"
     so_chung_nhan_match = re.search(r'Số:\s*[\d\.]+/(ĐK|HN|TĐ|GS|CH)', full_text, re.IGNORECASE)
     if so_chung_nhan_match:
         ma_hk = so_chung_nhan_match.group(1).upper()
         hinh_thuc_kiem_tra = INSPECTION_TYPES.get(ma_hk, ma_hk)
 
-    # 5. Dò tìm bảng thông tin Cấp tàu và lấy giá trị tương ứng được tích chữ "X"
     cap_tau = "Không xác định"
     for table in tables_data:
         if len(table) >= 2 and any("Cấp tàu" in str(cell) for cell in table[0]):
             header_row = table[0]
             value_row = table[1]
             
-            cap_tau_cols = [
-                "Hạn chế III",
-                "Hạn chế II",
-                "Hạn chế I",
-                "Không hạn chế"
-            ]
-            
+            cap_tau_cols = ["Hạn chế III", "Hạn chế II", "Hạn chế I", "Không hạn chế"]
             for cap_name in cap_tau_cols:
                 for idx, cell_val in enumerate(header_row):
                     if cap_name.lower() in cell_val.lower():

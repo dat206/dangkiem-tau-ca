@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { uploadBatchReports } from '../api/reportApi';
 
 export default function FileUpload() {
   const [files, setFiles] = useState([]);
@@ -6,18 +7,16 @@ export default function FileUpload() {
   const [resultSummary, setResultSummary] = useState(null);
   const [extractedData, setExtractedData] = useState([]);
 
-  // Xử lý khi người dùng chọn file từ máy tính
   const handleFileChange = (e) => {
     if (e.target.files) {
       setFiles(Array.from(e.target.files));
     }
   };
 
-  // Gửi toàn bộ danh sách file lên API Backend FastAPI
   const handleUploadSubmit = async (e) => {
     e.preventDefault();
     if (files.length === 0) {
-      alert("Vui lòng chọn ít nhất một file .docx trước khi tải lên!");
+      alert("Vui lòng chọn ít nhất một file .docx trước khi trích xuất!");
       return;
     }
 
@@ -25,24 +24,8 @@ export default function FileUpload() {
     setResultSummary(null);
     setExtractedData([]);
 
-    const formData = new FormData();
-    files.forEach((file) => {
-      formData.append("files", file);
-    });
-
     try {
-      // Gọi trực tiếp đến endpoint API chúng ta vừa tạo ở Bước 3
-      const response = await fetch("http://localhost:8000/api/reports/upload-batch", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || "Đã xảy ra lỗi trong quá trình tải file lên Server.");
-      }
-
-      const resData = await response.json();
+      const resData = await uploadBatchReports(files);
       setResultSummary({
         total: resData.total,
         success: resData.success,
@@ -51,18 +34,16 @@ export default function FileUpload() {
       });
       setExtractedData(resData.data || []);
     } catch (error) {
-      console.error("Lỗi Upload:", error);
-      alert(`Không thể tải file lên: ${error.message}`);
+      console.error("Lỗi trích xuất:", error);
+      alert(`Đã có lỗi xảy ra: ${error.response?.data?.detail || error.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  // Hàm chuyển đổi mảng dữ liệu thành file CSV và tải xuống máy khách giống hệt Streamlit cũ
   const downloadCSVResult = () => {
     if (extractedData.length === 0) return;
-
-    const headers = ["Tên File", "Số Đăng Ký", "Mã Tỉnh", "Chiều Dài Lmax", "Hình Thức Kiểm Tra", "Cấp Tàu", "Trạng Thái", "Ghi Chú Lỗi"];
+    const headers = ["Tên File", "Số Đăng Ký", "Mã Tỉnh", "Chiều Dài Lmax", "Hình Thức Kiểm Tra", "Cấp Tàu", "Trạng Thái"];
     const csvRows = [headers.join(",")];
 
     extractedData.forEach((row) => {
@@ -73,18 +54,17 @@ export default function FileUpload() {
         `"${row.lmax || '0'}"`,
         `"${row.hinh_thuc_kiem_tra || ''}"`,
         `"${row.cap_tau || ''}"`,
-        `"${row.status || ''}"`,
-        `"${(row.error_msg || '').replace(/"/g, '""')}"`
+        `"${row.status || ''}"`
       ];
       csvRows.push(values.join(","));
     });
 
-    const csvContent = "\uFEFF" + csvRows.join("\n"); // Thêm BOM \uFEFF để tránh lỗi hiển thị tiếng Việt trên Excel
+    const csvContent = "\uFEFF" + csvRows.join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `ket_qua_trich_xuat_tau_ca.csv`);
+    link.setAttribute("download", `bao_cao_dang_kiem_tau_ca.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -93,7 +73,7 @@ export default function FileUpload() {
   return (
     <div className="max-w-7xl mx-auto p-6 bg-white rounded-lg shadow-md mt-6">
       <h2 className="text-2xl font-bold text-gray-800 mb-2">Hệ thống trích xuất thông tin tàu cá hàng loạt</h2>
-      <p className="text-gray-600 mb-6">Hỗ trợ đọc dữ liệu tự động từ các file Biên bản/Giấy chứng nhận đăng kiểm (.docx)</p>
+      <p className="text-gray-600 mb-6">Đọc tự động dữ liệu từ các tệp văn bản kiểm định (.docx) và lưu vào hệ thống cơ sở dữ liệu</p>
 
       <form onSubmit={handleUploadSubmit} className="space-y-4 mb-8">
         <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors">
@@ -106,10 +86,10 @@ export default function FileUpload() {
             id="file-select-input"
           />
           <label htmlFor="file-select-input" className="cursor-pointer text-blue-600 hover:text-blue-800 font-medium">
-            Bấm vào đây để chọn các file tài liệu Word (.docx)
+            Bấm vào đây để chọn danh sách các file Word cần trích xuất
           </label>
           {files.length > 0 && (
-            <p className="mt-2 text-sm text-green-600 font-semibold">Đã chọn {files.length} file chuẩn bị sẵn sàng.</p>
+            <p className="mt-2 text-sm text-green-600 font-semibold">Đã chọn thành công {files.length} file tài liệu.</p>
           )}
         </div>
 
@@ -120,11 +100,10 @@ export default function FileUpload() {
             loading || files.length === 0 ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
           }`}
         >
-          {loading ? 'Đang đọc và xử lý dữ liệu...' : 'Bắt đầu trích xuất hàng loạt'}
+          {loading ? 'Hệ thống đang xử lý đa luồng dữ liệu...' : 'Bắt đầu trích xuất hàng loạt'}
         </button>
       </form>
 
-      {/* Hiển thị tóm tắt kết quả */}
       {resultSummary && (
         <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-md flex justify-between items-center">
           <div>
@@ -140,7 +119,6 @@ export default function FileUpload() {
         </div>
       )}
 
-      {/* Bảng hiển thị dữ liệu chi tiết thu được */}
       {extractedData.length > 0 && (
         <div className="overflow-x-auto border border-gray-200 rounded-md">
           <table className="min-w-full divide-y divide-gray-200 text-sm">
