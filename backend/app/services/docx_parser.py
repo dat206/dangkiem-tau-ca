@@ -1,11 +1,8 @@
 import re
 import docx
-<<<<<<< Updated upstream
-from pydantic import BaseModel, ValidationError
-=======
 from pydantic import BaseModel
 from typing import Optional
->>>>>>> Stashed changes
+from pydantic import BaseModel, ValidationError
 
 class ParseError(Exception):
     pass
@@ -16,14 +13,11 @@ class VesselData(BaseModel):
     lmax: float
     hinh_thuc_kiem_tra: str
     cap_tau: str
-<<<<<<< Updated upstream
-=======
     ho_ten: Optional[str] = ""
     dia_chi: Optional[str] = ""
     may_chinh: Optional[float] = 0.0
     han_dk: Optional[str] = ""
     nghe: Optional[str] = ""
->>>>>>> Stashed changes
 
 INSPECTION_TYPES = {
     "ĐK": "Định kỳ",
@@ -33,12 +27,10 @@ INSPECTION_TYPES = {
     "CH": "Cải hoán"
 }
 
-<<<<<<< Updated upstream
 def clean_text(text: str) -> str:
     text = re.sub(r'\s+', ' ', text)
     text = text.replace('\n', ' ').strip()
     return text
-=======
 def clean_inline_text(text: str) -> str:
     text = re.sub(r'\s+', ' ', text)
     return text.strip()
@@ -63,7 +55,6 @@ def extract_float(pattern, text):
             except:
                 pass
     return 0.0
->>>>>>> Stashed changes
 
 def parse_vessel_docx(file_path: str) -> VesselData:
     try:
@@ -72,7 +63,6 @@ def parse_vessel_docx(file_path: str) -> VesselData:
         raise ParseError(f"Không thể đọc file DOCX: {str(e)}")
 
     full_text_blocks = []
-<<<<<<< Updated upstream
     tables_data = []
 
     for para in doc.paragraphs:
@@ -125,7 +115,6 @@ def parse_vessel_docx(file_path: str) -> VesselData:
             ]
             
             for cap_name in cap_tau_cols:
-=======
     
     for para in doc.paragraphs:
         cleaned = clean_inline_text(para.text)
@@ -160,8 +149,7 @@ def parse_vessel_docx(file_path: str) -> VesselData:
         elif "hàng năm" in ht_val: hinh_thuc_kiem_tra = "Hàng năm"
         elif "trên đà" in ht_val: hinh_thuc_kiem_tra = "Trên đà"
         elif "giám sát" in ht_val: hinh_thuc_kiem_tra = "Giám sát"
-
-    lmax = extract_float(r"(?:Lmax|Chiều dài lớn nhất)[^\n]*?:\s*([^\n]+)", full_text)
+        lmax = extract_float(r"(?:Lmax|Chiều dài lớn nhất)[^\n]*?:\s*([^\n]+)", full_text)
     may_chinh = extract_float(r"(?:công suất máy chính|Công suất)[^\n]*?:\s*([^\n]+)", full_text)
     
     ho_ten = ""
@@ -203,13 +191,11 @@ def parse_vessel_docx(file_path: str) -> VesselData:
             header_row = table_rows[0]
             value_row = table_rows[1]
             for cap_name in ["Hạn chế III", "Hạn chế II", "Hạn chế I", "Không hạn chế"]:
->>>>>>> Stashed changes
                 for idx, cell_val in enumerate(header_row):
                     if cap_name in cell_val:
                         if idx < len(value_row) and value_row[idx].strip().upper() == "X":
                             cap_tau = cap_name
                             break
-<<<<<<< Updated upstream
                 if cap_tau != "Không xác định":
                     break
 
@@ -223,7 +209,6 @@ def parse_vessel_docx(file_path: str) -> VesselData:
         )
     except ValidationError as e:
         raise ParseError(f"Lỗi xác thực dữ liệu: {str(e)}")
-=======
                 if cap_tau != "Không xác định": break
 
     return VesselData(
@@ -238,4 +223,3 @@ def parse_vessel_docx(file_path: str) -> VesselData:
         han_dk=han_dk,
         nghe=nghe
     )
->>>>>>> Stashed changes
