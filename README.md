@@ -35,7 +35,7 @@ Hệ thống cho phép:
 ## 🚀 Quick Start
 
 ### Chuẩn bị
-- Python 3.11+
+- Python 3.11 hoặc 3.12 cho backend
 - Node.js 18+
 - PostgreSQL 14+ (hoặc Neon.tech account miễn phí)
 
@@ -51,8 +51,9 @@ source venv/bin/activate  # Trên Windows: venv\Scripts\activate
 # Cài dependencies
 pip install -r requirements.txt
 
-# Cấu hình database (tạo file .env)
-echo "DATABASE_URL=postgresql://user:password@localhost/fishing_db" > .env
+# Cấu hình database
+cp .env.example .env
+# Cập nhật DATABASE_URL trong .env bằng connection string Neon/PostgreSQL
 
 # Chạy migrations
 alembic upgrade head
@@ -72,8 +73,8 @@ cd frontend
 # Cài dependencies
 npm install
 
-# Tạo .env
-echo "VITE_API_URL=http://localhost:8000" > .env
+# Tạo .env từ file mẫu
+cp .env.example .env
 
 # Chạy dev server
 npm run dev
@@ -100,6 +101,7 @@ fishing-vessel-report/
 │   ├── index.html
 │   ├── vite.config.js
 │   ├── package.json
+│   ├── .env.example
 │   └── eslint.config.js
 │
 ├── backend/                         # FastAPI app
@@ -121,6 +123,7 @@ fishing-vessel-report/
 │   │   ├── versions/
 │   │   └── env.py
 │   ├── requirements.txt
+│   ├── .env.example
 │   ├── Dockerfile
 │   └── alembic.ini
 │

@@ -1,10 +1,9 @@
-"""API client for frontend - Gọi backend API"""
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const apiClient = axios.create({
-  baseURL: API_URL,
+  baseURL: `${API_URL}/api`,
   timeout: 60000, // 1 minute timeout for file upload
 });
 
@@ -39,17 +38,54 @@ export const generateReport = async (files, config) => {
 export const getReportHistory = async (skip = 0, limit = 10) => {
   /**
    * Lấy lịch sử xuất báo cáo
-   * @param {number} skip - Pagination offset
+   * @param {number|Object} skip - Pagination offset or query params
    * @param {number} limit - Number of records
-   * @returns {Promise<Array>} - List of reports
+   * @returns {Promise<Object>} - Paginated reports
    */
+  const params = typeof skip === 'object'
+    ? {
+        skip: skip.skip ?? 0,
+        limit: skip.limit ?? 10,
+        quarter: skip.quarter || undefined,
+        year: skip.year || undefined,
+      }
+    : { skip, limit };
+
   try {
     const response = await apiClient.get('/reports/history', {
-      params: { skip, limit },
+      params,
     });
+
+    if (Array.isArray(response.data)) {
+      return {
+        items: response.data,
+        total: response.data.length,
+        skip: params.skip,
+        limit: params.limit,
+      };
+    }
+
     return response.data;
   } catch (error) {
     console.error('Error fetching history:', error);
+    throw error;
+  }
+};
+
+export const downloadReportHistory = async (reportId) => {
+  /**
+   * Download lại báo cáo đã xuất
+   * @param {number} reportId - Report history ID
+   * @returns {Promise<Blob>} - Report file blob
+   */
+  try {
+    const response = await apiClient.get(`/reports/history/${reportId}/download`, {
+      responseType: 'blob',
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('Error downloading history report:', error);
     throw error;
   }
 };
