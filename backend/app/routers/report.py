@@ -14,7 +14,6 @@ router = APIRouter(
 @router.get("/history")
 def get_report_history(db: Session = Depends(get_db)):
     """Lấy danh sách lịch sử các lượt báo cáo trích xuất dữ liệu."""
-    # Giữ nguyên API lịch sử báo cáo gốc của dự án chính
     return []
 
 @router.post("/upload-batch")
@@ -64,7 +63,6 @@ async def upload_vessel_documents(
             detail=f"Lỗi máy chủ: {str(e)}"
         )
     finally:
-        # Dọn dẹp các tệp tạm thời để tránh rác ổ đĩa hệ thống
         for path in saved_temp_paths:
             if path.exists():
                 path.unlink()

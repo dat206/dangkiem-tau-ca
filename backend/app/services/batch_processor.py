@@ -42,7 +42,7 @@ def run_batch_processor_api(file_paths: List[Path], db: Session, max_threads: in
             
             if file_data['status'] == 'Thành công':
                 try:
-                    # Kiểm tra xem tàu cá đã tồn tại trong DB chưa dựa trên số đăng ký (registration_number)
+                    # Ánh xạ chính xác sang các trường dữ liệu tiếng Anh của bảng vessels của bạn
                     existing_vessel = db.query(Vessel).filter(
                         Vessel.registration_number == file_data['so_dang_ky']
                     ).first()
