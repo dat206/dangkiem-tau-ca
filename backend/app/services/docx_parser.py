@@ -94,8 +94,6 @@ def parse_vessel_docx(file_path: str) -> VesselData:
                             break
                 if cap_tau != "Không xác định":
                     break
-            if cap_tau != "Không xác định":
-                break
 
     try:
         return VesselData(
