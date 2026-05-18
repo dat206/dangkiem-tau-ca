@@ -11,9 +11,6 @@ export const reportApi = {
     const response = await axios.post(`${API_URL}/reports/configs`, config);
     return response.data;
   },
-  /**
-   * Hàm gọi API gửi danh sách nhiều file Word lên server để xử lý hàng loạt.
-   */
   uploadBatchReports: async (files) => {
     const formData = new FormData();
     files.forEach((file) => {
