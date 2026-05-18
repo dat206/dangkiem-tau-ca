@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { uploadBatchReports } from '../api/reportApi';
+import { reportApi } from '../api/reportApi';
 
 export default function FileUpload() {
   const [files, setFiles] = useState([]);
@@ -25,7 +25,7 @@ export default function FileUpload() {
     setExtractedData([]);
 
     try {
-      const resData = await uploadBatchReports(files);
+      const resData = await reportApi.uploadBatchReports(files);
       setResultSummary({
         total: resData.total,
         success: resData.success,

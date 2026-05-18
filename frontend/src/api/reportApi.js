@@ -10,22 +10,21 @@ export const reportApi = {
   saveConfig: async (config) => {
     const response = await axios.post(`${API_URL}/reports/configs`, config);
     return response.data;
+  },
+  /**
+   * Hàm gọi API gửi danh sách nhiều file Word lên server để xử lý hàng loạt.
+   */
+  uploadBatchReports: async (files) => {
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append("files", file);
+    });
+
+    const response = await axios.post(`${API_URL}/reports/upload-batch`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
   }
-};
-
-/**
- * Hàm gọi API gửi danh sách nhiều file Word lên server để xử lý hàng loạt.
- */
-export const uploadBatchReports = async (files) => {
-  const formData = new FormData();
-  files.forEach((file) => {
-    formData.append("files", file);
-  });
-
-  const response = await axios.post(`${API_URL}/reports/upload-batch`, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
-  });
-  return response.data;
 };
