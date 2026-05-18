@@ -22,6 +22,16 @@ export const reportApi = {
         'Content-Type': 'multipart/form-data'
       }
     });
+
+    if (Array.isArray(response.data)) {
+      return {
+        items: response.data,
+        total: response.data.length,
+        skip: params.skip,
+        limit: params.limit,
+      };
+    }
+
     return response.data;
   }
 };

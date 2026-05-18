@@ -1,21 +1,24 @@
-"""Models - Pydantic + SQLAlchemy"""
-from datetime import datetime, date
+"""Pydantic and SQLAlchemy models for fishing vessel reports."""
+from datetime import date, datetime
 from enum import Enum
-from pydantic import BaseModel, Field
-from sqlalchemy import Column, String, Float, DateTime, Integer, Text
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+from sqlalchemy import Column, DateTime, Float, Integer, String, Text
+
 from app.database import Base
 
 
-# ========== ENUM ==========
 class MaterialEnum(str, Enum):
-    """Vật liệu tàu"""
+    """Hull material."""
+
     GO = "Gỗ"
     THEP = "Thép"
     FRP = "FRP"
 
 
 class InspectionTypeEnum(str, Enum):
-    """Hình thức kiểm tra"""
+    """Inspection type used in quarterly reports."""
+
     HANG_NAM = "Hàng năm"
     DINH_KY = "Định kỳ"
     TREN_DA = "Trên đà"
@@ -24,7 +27,8 @@ class InspectionTypeEnum(str, Enum):
 
 
 class LengthGroupEnum(str, Enum):
-    """Nhóm chiều dài Lmax"""
+    """Lmax group used for aggregation."""
+
     G12_15 = "12-15m"
     G15_20 = "15-20m"
     G20_24 = "20-24m"
@@ -32,36 +36,81 @@ class LengthGroupEnum(str, Enum):
     G30_PLUS = "≥30m"
 
 
-# ========== PYDANTIC MODELS (Request/Response) ==========
 class VesselData(BaseModel):
-    """Dữ liệu tàu từ DOCX parser"""
-    registration_number: str
-    owner_name: str
-    address: str
-    province_code: str
-    province_name: str
-    lmax: float = Field(..., gt=0, description="Chiều dài tàu (m)")
-    power_kw: float = Field(..., gt=0, description="Công suất máy (KW)")
+    """Validated vessel data extracted from a certificate DOCX file."""
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        str_strip_whitespace=True,
+        json_schema_extra={
+            "example": {
+                "registration_number": "QN-90599-TS",
+                "owner_name": "Hoàng Văn Sinh",
+                "address": "xã Đường Hoa, tỉnh Quảng Ninh",
+                "province_code": "QN",
+                "lmax": 12.8,
+                "power_kw": 169.92,
+                "material": "Gỗ",
+                "inspection_type": "Hàng năm",
+                "length_group": "12-15m",
+                "valid_until": "2027-05-09",
+                "issued_date": "2026-05-09",
+                "fishing_gear": "Lưới rê",
+            }
+        },
+    )
+
+    registration_number: str = Field(..., min_length=1)
+    owner_name: str = Field(..., min_length=1)
+    address: str = Field(..., min_length=1)
+    province_code: str = Field(..., min_length=2, max_length=10)
+    lmax: float = Field(..., gt=0, description="Vessel length Lmax in meters")
+    power_kw: float = Field(..., gt=0, description="Main engine power in kW")
     material: MaterialEnum
     inspection_type: InspectionTypeEnum
     length_group: LengthGroupEnum
     valid_until: date
     issued_date: date
-    fishing_gear: str
+    fishing_gear: str = Field(..., min_length=1)
 
-    class Config:
-        from_attributes = True
+    @field_validator("province_code")
+    @classmethod
+    def normalize_province_code(cls, value: str) -> str:
+        return value.upper()
 
 
 class ReportConfig(BaseModel):
-    """Cấu hình xuất báo cáo"""
-    quarter: int = Field(..., ge=1, le=4, description="Quý (1-4)")
-    year: int = Field(..., ge=2000, le=2100, description="Năm")
-    provinces: list[str] = Field(..., min_items=1, description="Danh sách tỉnh")
+    """Report generation configuration."""
+
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        json_schema_extra={
+            "example": {
+                "quarter": 1,
+                "year": 2026,
+                "provinces": ["QN", "TH"],
+            }
+        },
+    )
+
+    quarter: int = Field(..., ge=1, le=4, description="Quarter number from 1 to 4")
+    year: int = Field(..., ge=2000, le=2100, description="Report year")
+    provinces: list[str] = Field(..., min_length=1, description="Province codes")
+
+    @field_validator("provinces")
+    @classmethod
+    def normalize_provinces(cls, value: list[str]) -> list[str]:
+        provinces = [province.strip().upper() for province in value]
+        if any(not province for province in provinces):
+            raise ValueError("province codes must not be blank")
+        return provinces
 
 
 class ReportHistoryItem(BaseModel):
-    """Thông tin lịch sử xuất báo cáo"""
+    """Report generation history item."""
+
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     created_at: datetime
     quarter: int
@@ -69,13 +118,10 @@ class ReportHistoryItem(BaseModel):
     file_count: int
     provinces: str
 
-    class Config:
-        from_attributes = True
 
-
-# ========== SQLALCHEMY MODELS (Database) ==========
 class VesselORM(Base):
-    """Model Tàu - lưu vào database"""
+    """Database model for vessels."""
+
     __tablename__ = "vessels"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -96,7 +142,8 @@ class VesselORM(Base):
 
 
 class ReportHistoryORM(Base):
-    """Model Lịch sử báo cáo"""
+    """Database model for report history."""
+
     __tablename__ = "report_history"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -104,7 +151,7 @@ class ReportHistoryORM(Base):
     quarter = Column(Integer)
     year = Column(Integer)
     file_count = Column(Integer)
-    provinces = Column(String(500))  # JSON hoặc comma-separated
-    file_path = Column(String(500))  # Path to saved Excel files
-    status = Column(String(20), default="success")  # success, partial_error, error
+    provinces = Column(String(500))
+    file_path = Column(String(500))
+    status = Column(String(20), default="success")
     error_message = Column(Text, nullable=True)
