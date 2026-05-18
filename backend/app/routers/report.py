@@ -1,84 +1,179 @@
-from pathlib import Path
+"""
+Report Router
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
-from fastapi.responses import FileResponse
-from sqlalchemy.orm import Session
+Handles all report generation endpoints, including Excel export for vessel data.
+"""
 
-from app.database import get_db
-from app.models.vessel import ReportHistoryORM
+from typing import List, Dict, Any, Optional
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
+import logging
 
-router = APIRouter()
+from ..services.excel_generator import generate_vessel_excel
 
 
+# Logger setup
+logger = logging.getLogger(__name__)
+
+# Create router with /api prefix
+router = APIRouter(prefix="/api", tags=["reports"])
+
+
+# ==================== Service Functions ====================
+def _get_vessel_data() -> List[Dict[str, Any]]:
+    """
+    Retrieve vessel data from database or mock data.
+    
+    This function separates data retrieval logic from the endpoint handler,
+    making it easier to:
+    - Switch from mock data to database queries
+    - Add filtering and pagination
+    - Add caching
+    - Test independently
+    
+    Returns:
+        List[Dict[str, Any]]: List of vessel records with keys:
+                              - registration_no: str
+                              - owner: str
+                              - lmax: float
+                              - engine_power: int
+    
+    Note:
+        Currently returns mock data. Replace with database query when ready:
+        
+        from app.database import SessionLocal
+        from app.models.vessel import Vessel
+        
+        db = SessionLocal()
+        vessels = db.query(Vessel).all()
+        return [v.to_dict() for v in vessels]
+    """
+    # Mock data - replace with database query when ready
+    mock_data = [
+        {
+            "registration_no": "TH-001",
+            "owner": "Nguyễn Văn A",
+            "lmax": 15.5,
+            "engine_power": 450,
+        },
+        {
+            "registration_no": "TH-002",
+            "owner": "Trần Văn B",
+            "lmax": 12.3,
+            "engine_power": 300,
+        },
+        {
+            "registration_no": "TH-003",
+            "owner": "Phạm Thị C",
+            "lmax": 18.7,
+            "engine_power": 550,
+        },
+        {
+            "registration_no": "TH-004",
+            "owner": "Võ Minh D",
+            "lmax": 14.2,
+            "engine_power": 380,
+        },
+    ]
+    
+    return mock_data
+
+
+def _export_vessel_report(data: Optional[List[Dict[str, Any]]] = None) -> StreamingResponse:
+    """
+    Generate and stream vessel Excel report.
+    
+    This function handles the export logic separately from the endpoint,
+    allowing it to be reused in different contexts (async tasks, batch exports, etc.).
+    
+    Args:
+        data: Optional list of vessel data. If None, fetches from _get_vessel_data().
+              Allows for testing with custom data.
+    
+    Returns:
+        StreamingResponse: Excel file as streaming response, ready to download.
+    
+    Raises:
+        HTTPException: If Excel generation fails.
+    """
+    try:
+        # Get data if not provided
+        if data is None:
+            data = _get_vessel_data()
+        
+        # Generate Excel file
+        excel_bytes = generate_vessel_excel(data)
+        
+        # Create streaming response with proper headers
+        return StreamingResponse(
+            iter([excel_bytes.getvalue()]),
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": "attachment; filename=Bao-cao-tau-ca.xlsx"
+            },
+        )
+    
+    except Exception as e:
+        logger.error(f"Error generating vessel report: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Lỗi khi tạo báo cáo: {str(e)}"
+        )
+
+
+# ==================== Endpoints ====================
 @router.post("/generate-report")
-async def generate_report(file: UploadFile = File(...)):
-    return {
-        "filename": file.filename,
-        "content_type": file.content_type
-    }
+async def generate_report() -> StreamingResponse:
+    """
+    Generate and download vessel report as Excel file.
+    
+    This endpoint retrieves vessel data and generates a formatted Excel report.
+    The file is automatically downloaded to the client's default download folder.
+    
+    Returns:
+        StreamingResponse: Excel file (.xlsx) with complete formatting.
+        
+    Raises:
+        HTTPException 500: If report generation fails.
+    
+    Example:
+        >>> # Frontend call
+        >>> const response = await fetch("/api/generate-report", {
+        >>>     method: "POST"
+        >>> });
+        >>> const blob = await response.blob();
+        >>> // Browser automatically downloads as Bao-cao-tau-ca.xlsx
+    """
+    return _export_vessel_report()
 
 
-@router.get("/reports/history")
-def get_report_history(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
-    quarter: int | None = Query(None, ge=1, le=4),
-    year: int | None = Query(None, ge=2000, le=2100),
-    db: Session = Depends(get_db),
-):
-    query = db.query(ReportHistoryORM)
-
-    if quarter is not None:
-        query = query.filter(ReportHistoryORM.quarter == quarter)
-    if year is not None:
-        query = query.filter(ReportHistoryORM.year == year)
-
-    total = query.count()
-    reports = (
-        query.order_by(ReportHistoryORM.created_at.desc())
-        .offset(skip)
-        .limit(limit)
-        .all()
-    )
-
-    return {
-        "items": [
-            {
-                "id": report.id,
-                "created_at": report.created_at,
-                "quarter": report.quarter,
-                "year": report.year,
-                "file_count": report.file_count,
-                "provinces": report.provinces,
-                "status": report.status,
-                "has_file": bool(report.file_path),
-            }
-            for report in reports
-        ],
-        "total": total,
-        "skip": skip,
-        "limit": limit,
-    }
-
-
-@router.get("/reports/history/{report_id}/download")
-def download_report_history(report_id: int, db: Session = Depends(get_db)):
-    report = db.query(ReportHistoryORM).filter(ReportHistoryORM.id == report_id).first()
-
-    if report is None:
-        raise HTTPException(status_code=404, detail="Report history item not found")
-    if not report.file_path:
-        raise HTTPException(status_code=404, detail="Report file is not available")
-
-    file_path = Path(report.file_path)
-    if not file_path.is_absolute():
-        file_path = Path.cwd() / file_path
-
-    if not file_path.is_file():
-        raise HTTPException(status_code=404, detail="Report file is not available")
-
-    return FileResponse(
-        path=file_path,
-        filename=file_path.name,
-        media_type="application/octet-stream",
-    )
+# ==================== Additional Endpoints (Optional Future Use) ====================
+@router.post("/generate-report/custom")
+async def generate_custom_report(data: List[Dict[str, Any]]) -> StreamingResponse:
+    """
+    Generate vessel report with custom data.
+    
+    Useful for testing and advanced scenarios where you want to
+    generate reports with specific filtered or transformed data.
+    
+    Args:
+        data: List of vessel dictionaries to include in the report.
+    
+    Returns:
+        StreamingResponse: Excel file with custom data.
+    
+    Raises:
+        HTTPException 500: If report generation fails.
+    
+    Example:
+        >>> data = [
+        >>>     {
+        >>>         "registration_no": "TH-001",
+        >>>         "owner": "Nguyen Van A",
+        >>>         "lmax": 15.5,
+        >>>         "engine_power": 450
+        >>>     }
+        >>> ]
+        >>> POST /api/generate-report/custom with JSON body
+    """
+    return _export_vessel_report(data=data)
