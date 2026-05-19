@@ -19,11 +19,14 @@ class MaterialEnum(str, Enum):
 class InspectionTypeEnum(str, Enum):
     """Inspection type used in quarterly reports."""
 
+    LAN_DAU = "Lần đầu"
     HANG_NAM = "Hàng năm"
+    TRUNG_GIAN_TREN_DA = "Trung gian (Trên đà)"
     DINH_KY = "Định kỳ"
+    BAT_THUONG = "Bất thường"
+    CAI_HOAN = "Cải hoán"
     TREN_DA = "Trên đà"
     GIAM_SAT = "Giám sát"
-    CAI_HOAN = "Cải hoán"
 
 
 class LengthGroupEnum(str, Enum):
@@ -34,6 +37,18 @@ class LengthGroupEnum(str, Enum):
     G20_24 = "20-24m"
     G24_30 = "24-30m"
     G30_PLUS = "≥30m"
+
+
+OPTIONAL_TEXT_FIELDS = (
+    "province_name",
+    "registry_book_number",
+    "inspection_authority",
+    "inspector_name",
+    "technical_record_number",
+    "safety_certificate_number",
+    "inspection_conclusion",
+    "classification_symbol",
+)
 
 
 class VesselData(BaseModel):
@@ -48,6 +63,7 @@ class VesselData(BaseModel):
                 "owner_name": "Hoàng Văn Sinh",
                 "address": "xã Đường Hoa, tỉnh Quảng Ninh",
                 "province_code": "QN",
+                "province_name": "Quảng Ninh",
                 "lmax": 12.8,
                 "power_kw": 169.92,
                 "material": "Gỗ",
@@ -56,6 +72,17 @@ class VesselData(BaseModel):
                 "valid_until": "2027-05-09",
                 "issued_date": "2026-05-09",
                 "fishing_gear": "Lưới rê",
+                "registry_book_number": "90599/26/HN.QN/ĐKTC",
+                "registry_book_issued_date": "2026-05-09",
+                "inspection_authority": "Công ty CP Công nghệ cao Hoàng Bảo Minh",
+                "inspector_name": "Nguyễn Văn A",
+                "technical_record_number": "90599.26/HN.QN/ĐKTC",
+                "technical_record_date": "2026-05-09",
+                "safety_certificate_number": "416.26/HN.QN/ĐKTC",
+                "safety_certificate_date": "2026-05-09",
+                "extension_inspection_date": None,
+                "inspection_conclusion": "Thỏa mãn hoạt động",
+                "classification_symbol": "Hạn chế II",
             }
         },
     )
@@ -64,6 +91,7 @@ class VesselData(BaseModel):
     owner_name: str = Field(..., min_length=1)
     address: str = Field(..., min_length=1)
     province_code: str = Field(..., min_length=2, max_length=10)
+    province_name: str | None = Field(default=None, min_length=1)
     lmax: float = Field(..., gt=0, description="Vessel length Lmax in meters")
     power_kw: float = Field(..., gt=0, description="Main engine power in kW")
     material: MaterialEnum
@@ -72,6 +100,64 @@ class VesselData(BaseModel):
     valid_until: date
     issued_date: date
     fishing_gear: str = Field(..., min_length=1)
+    registry_book_number: str | None = Field(
+        default=None,
+        min_length=1,
+        description="Số sổ đăng kiểm/Sổ ATKT",
+    )
+    registry_book_issued_date: date | None = Field(
+        default=None,
+        description="Ngày cấp sổ đăng kiểm",
+    )
+    inspection_authority: str | None = Field(
+        default=None,
+        min_length=1,
+        description="Cơ quan đăng kiểm",
+    )
+    inspector_name: str | None = Field(
+        default=None,
+        min_length=1,
+        description="Đăng kiểm viên",
+    )
+    technical_record_number: str | None = Field(
+        default=None,
+        min_length=1,
+        description="Biên bản KTKT số",
+    )
+    technical_record_date: date | None = Field(
+        default=None,
+        description="Ngày biên bản KTKT",
+    )
+    safety_certificate_number: str | None = Field(
+        default=None,
+        min_length=1,
+        description="Giấy chứng nhận ATKT số",
+    )
+    safety_certificate_date: date | None = Field(
+        default=None,
+        description="Ngày chứng nhận ATKT",
+    )
+    extension_inspection_date: date | None = Field(
+        default=None,
+        description="Ngày kiểm tra gia hạn",
+    )
+    inspection_conclusion: str | None = Field(
+        default=None,
+        min_length=1,
+        description="Kết luận chung",
+    )
+    classification_symbol: str | None = Field(
+        default=None,
+        min_length=1,
+        description="Ký hiệu phân cấp",
+    )
+
+    @field_validator(*OPTIONAL_TEXT_FIELDS, mode="before")
+    @classmethod
+    def blank_optional_text_to_none(cls, value: str | None) -> str | None:
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
 
     @field_validator("province_code")
     @classmethod
