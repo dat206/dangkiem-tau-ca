@@ -1,5 +1,5 @@
-import HistoryPage from './components/HistoryPage';
+import FileUpload from './components/FileUpload';
 
 export default function App() {
-  return <HistoryPage />;
+  return <FileUpload />;
 }

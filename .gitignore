@@ -10,3 +10,7 @@ node_modules/
 dist/
 .env.local
 .vscode/
+.coverage
+.tmp-parser-worktree/
+backend/output.txt
+backend/pip_install_output.txt
