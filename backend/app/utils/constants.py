@@ -12,6 +12,10 @@ PROVINCE_CODES = {
     "KG": "Kiên Giang",
     "BD": "Bạc Liêu",
     "SL": "Sóc Trăng",
+    "QNG": "Quảng Ngãi",
+    "QT": "Quảng Trị",
+    "TB": "Thái Bình",
+    "NĐ": "Nam Định",
 }
 
 # Nhóm chiều dài tàu (Lmax)

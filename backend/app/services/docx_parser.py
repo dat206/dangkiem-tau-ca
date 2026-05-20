@@ -1,13 +1,25 @@
+"""DOCX Parser for fishing vessel safety certificates.
+
+Extracts structured vessel data from the standardised DOCX format
+used for Vietnamese fishing vessel safety certificates.
+
+See docs/field_mapping.md for the coordinate mapping specification.
+"""
+
 import re
-import docx
-from pydantic import BaseModel
 from typing import Optional
+
+from docx import Document
 from pydantic import BaseModel, ValidationError
 
+
 class ParseError(Exception):
-    pass
+    """Raised when DOCX parsing fails."""
+
 
 class VesselData(BaseModel):
+    """Parsed vessel data extracted from a certificate DOCX."""
+
     so_dang_ky: str
     ma_tinh: str
     lmax: float
@@ -16,210 +28,350 @@ class VesselData(BaseModel):
     ho_ten: Optional[str] = ""
     dia_chi: Optional[str] = ""
     may_chinh: Optional[float] = 0.0
+    vat_lieu: Optional[str] = ""
     han_dk: Optional[str] = ""
     nghe: Optional[str] = ""
+    ngay_cap: Optional[str] = ""
 
+
+# Inspection type code mapping
 INSPECTION_TYPES = {
     "ĐK": "Định kỳ",
     "HN": "Hàng năm",
     "TĐ": "Trên đà",
-    "GS": "Giám sát",
-    "CH": "Cải hoán"
 }
 
-def clean_text(text: str) -> str:
-    text = re.sub(r'\s+', ' ', text)
-    text = text.replace('\n', ' ').strip()
-    return text
-def clean_inline_text(text: str) -> str:
-    text = re.sub(r'\s+', ' ', text)
-    return text.strip()
+NUMBER_RE = re.compile(r"[-+]?\d+(?:[.,]\d+)?")
+DATE_RE = re.compile(
+    r"ngày\s*(\d{1,2})\s*tháng\s*(\d{1,2})\s*năm\s*(\d{4})", re.IGNORECASE
+)
 
-def extract_value(pattern, text):
-    match = re.search(pattern, text, re.I)
-    if match:
-        val = match.group(1).strip()
-        if ':' in val:
-            val = val.split(':')[-1].strip()
-        return val
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def normalize_text(text: str) -> str:
+    """Collapse whitespace and strip."""
+    return re.sub(r"\s+", " ", text or "").strip()
+
+
+def strip_english_suffix(text: str) -> str:
+    """Remove trailing English labels commonly found in bilingual cells.
+
+    E.g. ``'Gỗ Materials…………….…..'`` → ``'Gỗ'``
+         ``'Lưới kéo. Used for'`` → ``'Lưới kéo'``
+         ``'( Vessel's owner): Nguyễn Văn A'`` → ``'Nguyễn Văn A'``
+    """
+    # Remove leading English preamble like "( Vessel's owner):"
+    text = re.sub(r"^\s*\(.*?\)\s*:?\s*", "", text)
+    # Remove trailing English words, ellipsis, and punctuation
+    text = re.sub(r"[.…]+\s*$", "", text)  # trailing dots/ellipsis
+    text = re.sub(r"\s+[A-Za-z][A-Za-z'\s]*$", "", text)  # trailing English words
+    return text.strip(". \t")
+
+
+def extract_number(text: str) -> Optional[float]:
+    """Extract the first number from *text*, handling Vietnamese comma decimals."""
+    m = NUMBER_RE.search(normalize_text(text))
+    if not m:
+        return None
+    return float(m.group(0).replace(",", "."))
+
+
+def extract_date_vn(text: str) -> Optional[str]:
+    """Extract Vietnamese date ``ngày X tháng Y năm Z`` → ``DD/MM/YYYY``."""
+    m = DATE_RE.search(normalize_text(text))
+    if not m:
+        return None
+    day, month, year = int(m.group(1)), int(m.group(2)), m.group(3)
+    return f"{day:02d}/{month:02d}/{year}"
+
+
+def safe_cell_text(table, row_idx: int, col_idx: int) -> str:
+    """Get cell text safely, returning ``''`` if out of bounds."""
+    try:
+        if row_idx < len(table.rows):
+            cells = table.rows[row_idx].cells
+            if col_idx < len(cells):
+                return normalize_text(cells[col_idx].text)
+    except (IndexError, AttributeError):
+        pass
     return ""
 
-def extract_float(pattern, text):
-    match = re.search(pattern, text, re.I)
-    if match:
-        val_str = match.group(1)
-        num_match = re.search(r'([\d,.]+)', val_str)
-        if num_match:
-            try:
-                return float(num_match.group(1).replace(',', '.'))
-            except:
-                pass
-    return 0.0
+
+def _build_full_text(doc) -> str:
+    """Build concatenated full‑document text for fallback regex searches."""
+    blocks: list[str] = []
+    for para in doc.paragraphs:
+        t = normalize_text(para.text)
+        if t:
+            blocks.append(t)
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                t = normalize_text(cell.text)
+                if t:
+                    blocks.append(t)
+    return " | ".join(blocks)
+
+
+# ---------------------------------------------------------------------------
+# Main parser
+# ---------------------------------------------------------------------------
 
 def parse_vessel_docx(file_path: str) -> VesselData:
+    """Parse a fishing vessel safety certificate DOCX file.
+
+    Uses coordinate‑based extraction following ``docs/field_mapping.md``.
+    Falls back to regex search on full text when coordinates miss.
+
+    Args:
+        file_path: Path to the ``.docx`` file.
+
+    Returns:
+        :class:`VesselData` with extracted fields.
+
+    Raises:
+        ParseError: If the file cannot be read or critical fields are missing.
+    """
     try:
-        doc = docx.Document(file_path)
-    except Exception as e:
-        raise ParseError(f"Không thể đọc file DOCX: {str(e)}")
+        doc = Document(file_path)
+    except Exception as exc:
+        raise ParseError(f"Không thể đọc file DOCX: {exc}")
 
-    full_text_blocks = []
-    tables_data = []
+    tables = doc.tables
+    paragraphs = doc.paragraphs
+    full_text = _build_full_text(doc)
 
-    for para in doc.paragraphs:
-        full_text_blocks.append(clean_text(para.text))
+    # ── 1. Inspection type from certificate number (T0 or full text) ──────
+    hinh_thuc_kiem_tra = "Giám sát"
+    cert_text = safe_cell_text(tables[0], 0, 0) if tables else ""
+    cert_match = re.search(
+        r"Số[^:]*:\s*[\d.]+/([a-zA-ZĐđ]+)", cert_text, re.IGNORECASE
+    )
+    if not cert_match:
+        cert_match = re.search(
+            r"Số[^:]*:\s*[\d.]+/([a-zA-ZĐđ]+)", full_text, re.IGNORECASE
+        )
+    if cert_match:
+        ma_hk = cert_match.group(1).upper()
+        hinh_thuc_kiem_tra = INSPECTION_TYPES.get(ma_hk, "Giám sát")
 
-    for table in doc.tables:
-        table_rows = []
-        for row in table.rows:
-            row_data = [clean_text(cell.text) for cell in row.cells]
-            table_rows.append(row_data)
-            full_text_blocks.extend(row_data)
-        tables_data.append(table_rows)
+    # ── 2. Registration number (T1.R0.C1 → fallback full text) ────────────
+    so_dang_ky = ""
+    if len(tables) > 1:
+        reg_text = safe_cell_text(tables[1], 0, 1)
+        reg_match = re.search(r"([a-zA-ZĐđ]{2,4}\s*-\s*\d+\s*-\s*[Tt][Ss])", reg_text)
+        if reg_match:
+            so_dang_ky = reg_match.group(1).replace(" ", "").upper()
 
-    full_text = " | ".join(full_text_blocks)
+    if not so_dang_ky:
+        reg_match = re.search(r"([a-zA-ZĐđ]{2,4}\s*-\s*\d+\s*-\s*[Tt][Ss])", full_text)
+        if reg_match:
+            so_dang_ky = reg_match.group(1).replace(" ", "").upper()
 
-    so_dang_ky_match = re.search(r'Số đăng ký:\s*([A-ZĐ]+-\d+-TS)', full_text, re.IGNORECASE)
-    if not so_dang_ky_match:
+    if not so_dang_ky:
         raise ParseError("Không tìm thấy Số đăng ký")
-    so_dang_ky = so_dang_ky_match.group(1).strip()
 
-    ma_tinh_match = re.match(r'^([A-ZĐ]+)-', so_dang_ky)
-    ma_tinh = ma_tinh_match.group(1) if ma_tinh_match else ""
+    ma_tinh = so_dang_ky.split("-")[0]
 
-    lmax_match = re.search(r'Chiều dài,\s*Lmax:\s*([\d,]+)', full_text, re.IGNORECASE)
-    if not lmax_match:
+    # ── 3. Owner name (P2 → fallback full text) ──────────────────────────
+    ho_ten = ""
+    if len(paragraphs) > 2:
+        p2 = normalize_text(paragraphs[2].text)
+        m = re.search(
+            r"(?:Chủ tàu|[Oo]wner)\s*\)?[:\s]*([^;]+?)(?:\s*;|\s*Quốc tịch|$)",
+            p2,
+            re.IGNORECASE,
+        )
+        if m:
+            ho_ten = strip_english_suffix(m.group(1).strip(": "))
+
+    if not ho_ten:
+        m = re.search(
+            r"(?:Chủ tàu|Họ và tên)[^:]*:[^:]*:?\s*([^;\n|]+)",
+            full_text,
+            re.IGNORECASE,
+        )
+        if m:
+            ho_ten = m.group(1).strip()
+
+    # ── 4. Address (P3 → fallback full text) ─────────────────────────────
+    dia_chi = ""
+    if len(paragraphs) > 3:
+        p3 = normalize_text(paragraphs[3].text)
+        m = re.search(
+            r"Địa chỉ[^:]*:\s*(?:\(Address\)\s*:?\s*)?(.+)", p3, re.IGNORECASE
+        )
+        if m:
+            dia_chi = m.group(1).strip()
+
+    if not dia_chi:
+        m = re.search(r"Địa chỉ[^:]*:\s*([^;\n|]+)", full_text, re.IGNORECASE)
+        if m:
+            raw = m.group(1).strip()
+            if raw.lower().startswith("(address)"):
+                raw = raw[9:].strip(": \t")
+            dia_chi = raw
+
+    # ── 5. Technical specs from T2 ───────────────────────────────────────
+    # Fishing gear: T2.R0.C0
+    nghe = ""
+    if len(tables) > 2:
+        t2r0c0 = safe_cell_text(tables[2], 0, 0)
+        m = re.search(r"Công dụng[^:]*:\s*([^(\n]+)", t2r0c0, re.IGNORECASE)
+        if m:
+            nghe = strip_english_suffix(m.group(1).strip())
+
+    if not nghe:
+        m = re.search(
+            r"(?:Công dụng|Nghề)[^:]*:\s*([^;\n|U]+)", full_text, re.IGNORECASE
+        )
+        if m:
+            nghe = m.group(1).strip()
+
+    # Hull material: T2.R0.C2 (may be in last cell of row due to merge)
+    vat_lieu = ""
+    if len(tables) > 2 and tables[2].rows:
+        row0_cells = tables[2].rows[0].cells
+        for cell in reversed(list(row0_cells)):
+            ct = normalize_text(cell.text)
+            m = re.search(r"Vật liệu[^:]*:\s*([^(\n]+)", ct, re.IGNORECASE)
+            if m:
+                vat_lieu = strip_english_suffix(m.group(1).strip())
+                break
+
+    if not vat_lieu:
+        m = re.search(r"Vật liệu[^:]*:\s*([^(\n|]+)", full_text, re.IGNORECASE)
+        if m:
+            vat_lieu = m.group(1).strip()
+
+    # Lmax: T2.R2.C0
+    lmax = 0.0
+    if len(tables) > 2:
+        t2r2c0 = safe_cell_text(tables[2], 2, 0)
+        if "Lmax" in t2r2c0 or "lmax" in t2r2c0.lower():
+            after_label = t2r2c0.split("Lmax")[-1]
+            cleaned = re.sub(r"\(.*?\)", "", after_label)
+            val = extract_number(cleaned)
+            if val and val > 0:
+                lmax = val
+
+    if lmax <= 0:
+        m = re.search(
+            r"(?:Chiều dài[^,]*,\s*Lmax|Lmax)[^:]*:\s*([^(\n|]+)",
+            full_text,
+            re.IGNORECASE,
+        )
+        if m:
+            val = extract_number(m.group(1))
+            if val and val > 0:
+                lmax = val
+
+    if lmax <= 0:
         raise ParseError("Không tìm thấy Chiều dài Lmax")
-    lmax_str = lmax_match.group(1).replace(',', '.')
-    try:
-        lmax = float(lmax_str)
-    except ValueError:
-        raise ParseError(f"Định dạng Lmax không hợp lệ: {lmax_str}")
 
-    hinh_thuc_kiem_tra = "Không xác định"
-    so_chung_nhan_match = re.search(r'Số:\s*[\d\.]+/(ĐK|HN|TĐ|GS|CH)', full_text)
-    if so_chung_nhan_match:
-        ma_hk = so_chung_nhan_match.group(1)
-        hinh_thuc_kiem_tra = INSPECTION_TYPES.get(ma_hk, ma_hk)
+    # Engine power: T2.R4.C0
+    may_chinh = 0.0
+    if len(tables) > 2:
+        t2r4c0 = safe_cell_text(tables[2], 4, 0)
+        m = re.search(r"Ne\s*\(?KW\)?[^:]*:\s*([^(\n]+)", t2r4c0, re.IGNORECASE)
+        if m:
+            val = extract_number(m.group(1))
+            if val:
+                may_chinh = val
 
+    if may_chinh <= 0:
+        m = re.search(
+            r"(?:công suất máy chính|Công suất|Ne)[^:]*:\s*([^(\n|]+)",
+            full_text,
+            re.IGNORECASE,
+        )
+        if m:
+            val = extract_number(m.group(1))
+            if val:
+                may_chinh = val
+
+    # ── 6. Operation class from T4 ───────────────────────────────────────
     cap_tau = "Không xác định"
-    for table in tables_data:
-        if len(table) >= 2 and "Cấp tàu" in table[0][0]:
-            header_row = table[0]
-            value_row = table[1]
-            
-            cap_tau_cols = [
+    if len(tables) > 4:
+        t4_rows = [
+            [normalize_text(cell.text) for cell in row.cells]
+            for row in tables[4].rows
+        ]
+        if len(t4_rows) >= 2:
+            header = t4_rows[0]
+            values = t4_rows[1]
+            for cap_name in [
                 "Hạn chế III",
                 "Hạn chế II",
                 "Hạn chế I",
-                "Không hạn chế"
-            ]
-            
-            for cap_name in cap_tau_cols:
-    
-    for para in doc.paragraphs:
-        cleaned = clean_inline_text(para.text)
-        if cleaned:
-            full_text_blocks.append(cleaned)
-
-    for table in doc.tables:
-        for row in table.rows:
-            row_texts = [clean_inline_text(cell.text) for cell in row.cells if clean_inline_text(cell.text)]
-            if row_texts:
-                full_text_blocks.append(" | ".join(row_texts))
-
-    full_text = "\n".join(full_text_blocks)
-
-    so_dk_match = re.search(r'([a-zA-ZĐđ]{2}\s*-\s*\d+\s*-\s*[tT][sS])', full_text)
-    if so_dk_match:
-        so_dang_ky = so_dk_match.group(1).replace(" ", "").upper()
-        ma_tinh = so_dang_ky.split('-')[0]
-    else:
-        so_dang_ky = ""
-        ma_tinh = ""
-
-    hinh_thuc_kiem_tra = "Không xác định"
-    so_chung_nhan_match = re.search(r'Số[^\n]*?:\s*[\d\.]+/(ĐK|HN|TĐ|GS|CH)', full_text, re.I)
-    if so_chung_nhan_match:
-        ma_hk = so_chung_nhan_match.group(1).upper()
-        hinh_thuc_kiem_tra = INSPECTION_TYPES.get(ma_hk, ma_hk)
-    else:
-        ht_match = extract_value(r"(?:Hình thức kiểm tra|Loại kiểm tra)[^\n]*?:\s*([^\n]+)", full_text)
-        ht_val = ht_match.lower()
-        if "định kỳ" in ht_val: hinh_thuc_kiem_tra = "Định kỳ"
-        elif "hàng năm" in ht_val: hinh_thuc_kiem_tra = "Hàng năm"
-        elif "trên đà" in ht_val: hinh_thuc_kiem_tra = "Trên đà"
-        elif "giám sát" in ht_val: hinh_thuc_kiem_tra = "Giám sát"
-        lmax = extract_float(r"(?:Lmax|Chiều dài lớn nhất)[^\n]*?:\s*([^\n]+)", full_text)
-    may_chinh = extract_float(r"(?:công suất máy chính|Công suất)[^\n]*?:\s*([^\n]+)", full_text)
-    
-    ho_ten = ""
-    m_ho_ten = re.search(r'(?:Chủ tàu|Họ và tên)[^:]*:[^:]*:\s*([^;\n\|]+)', full_text, re.I)
-    if m_ho_ten: ho_ten = m_ho_ten.group(1).strip()
-    
-    dia_chi = ""
-    m_dia_chi = re.search(r'Địa chỉ[^:]*:\s*([^;\n\|]+)', full_text, re.I)
-    if m_dia_chi:
-        dia_chi = m_dia_chi.group(1).strip()
-        if dia_chi.lower().startswith('(address)'):
-            dia_chi = dia_chi[9:].strip(': \t')
-        
-        # Format as [Mã Tỉnh], [Tên Phường/Xã] if matched
-        m_ward = re.search(r'(?:xã|phường|thị trấn)\s+([^,]+)', dia_chi, re.I)
-        if m_ward and ma_tinh:
-            dia_chi = f"{ma_tinh}, {m_ward.group(1).strip()}"
-            
-    nghe = ""
-    m_nghe = re.search(r'(?:Công dụng|Nghề)[^:]*:\s*([^;\n\|U]+)', full_text, re.I)
-    if m_nghe: nghe = m_nghe.group(1).strip()
-    
-    han_dk = ""
-    m_han = re.search(r'(?:có hiệu lực đến|giá trị đến hết ngày|Hạn đăng kiểm)[^\n]*?:\s*([^\n\|]+)', full_text, re.I)
-    if m_han:
-        date_str = m_han.group(1)
-        dm = re.search(r'ngày\s+(\d+)\s+tháng\s+(\d+)\s+năm\s+(\d+)', date_str, re.I)
-        if dm:
-            han_dk = f"{int(dm.group(1)):02d}/{int(dm.group(2)):02d}/{dm.group(3)}"
-        else:
-            dm2 = re.search(r'(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})', date_str)
-            if dm2:
-                han_dk = dm2.group(1)
-
-    cap_tau = "Không xác định"
-    for table in doc.tables:
-        table_rows = [[clean_inline_text(cell.text) for cell in row.cells] for row in table.rows]
-        if len(table_rows) >= 2 and "Cấp tàu" in table_rows[0][0]:
-            header_row = table_rows[0]
-            value_row = table_rows[1]
-            for cap_name in ["Hạn chế III", "Hạn chế II", "Hạn chế I", "Không hạn chế"]:
-                for idx, cell_val in enumerate(header_row):
-                    if cap_name in cell_val:
-                        if idx < len(value_row) and value_row[idx].strip().upper() == "X":
+                "Không hạn chế",
+            ]:
+                for idx, cell_val in enumerate(header):
+                    if cap_name in cell_val and idx < len(values):
+                        if values[idx].strip().upper() == "X":
                             cap_tau = cap_name
                             break
                 if cap_tau != "Không xác định":
                     break
 
+    # ── 7. Valid‑until date (search paragraphs for effectiveness clause) ─
+    han_dk = ""
+    for para in paragraphs:
+        pt = normalize_text(para.text).lower()
+        if "hiệu lực đến" in pt or "giá trị đến" in pt:
+            d = extract_date_vn(para.text)
+            if d:
+                han_dk = d
+                break
+
+    if not han_dk:
+        m = re.search(
+            r"(?:có hiệu lực đến|giá trị đến hết ngày|Hạn đăng kiểm)[^\n|]*",
+            full_text,
+            re.IGNORECASE,
+        )
+        if m:
+            d = extract_date_vn(m.group(0))
+            if d:
+                han_dk = d
+
+    # ── 8. Issued date from T5 (last table) ──────────────────────────────
+    ngay_cap = ""
+    if len(tables) > 5:
+        t5r0c1 = safe_cell_text(tables[5], 0, 1)
+        d = extract_date_vn(t5r0c1)
+        if d:
+            ngay_cap = d
+
+    if not ngay_cap and tables:
+        last_table = tables[-1]
+        for row in last_table.rows:
+            for cell in row.cells:
+                d = extract_date_vn(normalize_text(cell.text))
+                if d:
+                    ngay_cap = d
+                    break
+            if ngay_cap:
+                break
+
+    # ── Build result ─────────────────────────────────────────────────────
     try:
         return VesselData(
             so_dang_ky=so_dang_ky,
             ma_tinh=ma_tinh,
             lmax=lmax,
             hinh_thuc_kiem_tra=hinh_thuc_kiem_tra,
-            cap_tau=cap_tau
+            cap_tau=cap_tau,
+            ho_ten=ho_ten,
+            dia_chi=dia_chi,
+            may_chinh=may_chinh,
+            vat_lieu=vat_lieu,
+            han_dk=han_dk,
+            nghe=nghe,
+            ngay_cap=ngay_cap,
         )
-    except ValidationError as e:
-        raise ParseError(f"Lỗi xác thực dữ liệu: {str(e)}")
-                if cap_tau != "Không xác định": break
-
-    return VesselData(
-        so_dang_ky=so_dang_ky,
-        ma_tinh=ma_tinh,
-        lmax=lmax,
-        hinh_thuc_kiem_tra=hinh_thuc_kiem_tra,
-        cap_tau=cap_tau,
-        ho_ten=ho_ten,
-        dia_chi=dia_chi,
-        may_chinh=may_chinh,
-        han_dk=han_dk,
-        nghe=nghe
-    )
+    except ValidationError as exc:
+        raise ParseError(f"Lỗi xác thực dữ liệu: {exc}")
