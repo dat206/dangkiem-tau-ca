@@ -7,7 +7,7 @@ def test_parse_error_non_existent():
     with pytest.raises(ParseError):
         parse_vessel_docx("duong_dan_file_khong_ton_tai_he_thong.docx")
 
-@patch('app.services.docx_parser.parse_vessel_docx')
+@patch('tests.test_docx_parser.parse_vessel_docx')
 def test_mock_parse_vessel_data(mock_parser):
     """Giả lập dữ liệu trích xuất từ file Word mẫu để vượt qua quy trình GitHub Actions CI."""
     mock_parser.return_value = VesselData(

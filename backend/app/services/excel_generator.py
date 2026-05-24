@@ -166,3 +166,95 @@ def generate_vessel_excel(data: List[Dict[str, Any]]) -> BytesIO:
     output.seek(0)  # Reset pointer to beginning for reading
     
     return output
+
+
+def generate_quarterly_summary_excel(aggregated_data: Dict[str, Any], quarter: int, year: int) -> BytesIO:
+    """
+    Generate a summary Excel report with aggregated vessel statistics.
+    
+    Creates a professional multi-table Excel sheet showing distributions
+    by province, length group, material, and inspection type.
+    """
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Bao cao thong ke"
+    
+    register_styles(wb)
+    set_default_font(wb)
+    ws.sheet_view.showGridLines = False
+    
+    # Title
+    ws.merge_cells("A1:C1")
+    title_cell = ws["A1"]
+    title_cell.value = f"BÁO CÁO THỐNG KÊ ĐĂNG KIỂM TÀU CÁ - QUÝ {quarter}/{year}"
+    from openpyxl.styles import Font
+    title_cell.font = Font(name="Arial", size=14, bold=True, color="0B5345")
+    ws.row_dimensions[1].height = 30
+    
+    current_row = 3
+    
+    def write_table(title: str, headers: List[str], data_dict: Dict[str, int]):
+        nonlocal current_row
+        # Table Title
+        ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=3)
+        t_cell = ws.cell(row=current_row, column=1)
+        t_cell.value = title
+        t_cell.font = Font(name="Arial", size=11, bold=True, color="117A65")
+        ws.row_dimensions[current_row].height = 20
+        current_row += 1
+        
+        # Headers
+        for col_idx, h_text in enumerate(headers, start=1):
+            cell = ws.cell(row=current_row, column=col_idx)
+            cell.value = h_text
+            cell.style = "header_style"
+        ws.row_dimensions[current_row].height = 22
+        start_table_row = current_row
+        current_row += 1
+        
+        # Rows
+        for idx, (key, val) in enumerate(data_dict.items(), start=1):
+            c1 = ws.cell(row=current_row, column=1, value=idx)
+            c1.style = "data_number_style"
+            
+            c2 = ws.cell(row=current_row, column=2, value=key)
+            c2.style = "data_text_style"
+            
+            c3 = ws.cell(row=current_row, column=3, value=val)
+            c3.style = "data_number_style"
+            
+            ws.row_dimensions[current_row].height = 20
+            current_row += 1
+            
+        # Total row
+        c1_tot = ws.cell(row=current_row, column=1, value="Tổng")
+        c1_tot.style = "total_style"
+        
+        c2_tot = ws.cell(row=current_row, column=2, value="")
+        c2_tot.style = "total_style"
+        
+        c3_tot = ws.cell(row=current_row, column=3, value=f"=SUM(C{start_table_row + 1}:C{current_row - 1})")
+        c3_tot.style = "total_style"
+        c3_tot.number_format = "#,##0"
+        
+        ws.row_dimensions[current_row].height = 22
+        
+        # Apply borders
+        apply_full_border(ws, start_row=start_table_row, end_row=current_row, start_col=1, end_col=3)
+        current_row += 2  # spacing
+        
+    write_table("1. THỐNG KÊ THEO TỈNH THÀNH", ["STT", "Tỉnh / Thành phố", "Số lượng tàu"], aggregated_data.get("by_province", {}))
+    write_table("2. THỐNG KÊ THEO PHÂN NHÓM CHIỀU DÀI LMAX", ["STT", "Nhóm chiều dài Lmax", "Số lượng tàu"], aggregated_data.get("by_length_group", {}))
+    write_table("3. THỐNG KÊ THEO VẬT LIỆU VỎ TÀU", ["STT", "Vật liệu vỏ", "Số lượng tàu"], aggregated_data.get("by_material", {}))
+    write_table("4. THỐNG KÊ THEO HÌNH THỨC KIỂM TRA", ["STT", "Hình thức kiểm tra", "Số lượng tàu"], aggregated_data.get("by_inspection_type", {}))
+    
+    # Width setup
+    ws.column_dimensions['A'].width = 8
+    ws.column_dimensions['B'].width = 30
+    ws.column_dimensions['C'].width = 18
+    
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    return output
+
