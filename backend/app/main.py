@@ -22,25 +22,9 @@ app.add_middleware(
 )
 
 # -- Routers ------------------------------------------------------------------
+# Tất cả route reports được đăng ký qua report_router với prefix /api/reports
+# Ví dụ: POST /api/reports/generate-report, POST /api/reports/upload-batch
 app.include_router(report_router, prefix="/api")
-
-# -- Direct API alias for generate-report to match API.md specification -------
-from fastapi import UploadFile, File, Form, Depends
-from sqlalchemy.orm import Session
-from app.database import get_db
-from app.routers.report import generate_report
-
-@app.post("/api/generate-report")
-async def generate_report_direct(
-    files: list[UploadFile] = File(...),
-    quarter: int = Form(...),
-    year: int = Form(...),
-    provinces: str = Form(...),
-    db: Session = Depends(get_db)
-):
-    return await generate_report(files=files, quarter=quarter, year=year, provinces=provinces, db=db)
-
-
 
 # -- Root endpoints -----------------------------------------------------------
 @app.get("/")
