@@ -1,10 +1,11 @@
-import tempfile
 import os
+import secrets
+import tempfile
 import zipfile
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Header, status
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
@@ -18,6 +19,28 @@ router = APIRouter(
     prefix="/reports",
     tags=["reports"]
 )
+
+
+def verify_extension_token(authorization: Optional[str]) -> None:
+    expected_token = os.getenv("EXTENSION_API_TOKEN", "").strip()
+    if not expected_token:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="EXTENSION_API_TOKEN chưa được cấu hình trên server."
+        )
+
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Thiếu Bearer token."
+        )
+
+    provided_token = authorization.removeprefix("Bearer ").strip()
+    if not secrets.compare_digest(provided_token, expected_token):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Bearer token không hợp lệ."
+        )
 
 @router.get("/history")
 def get_report_history(
@@ -56,6 +79,47 @@ def get_report_history(
             }
             for item in items
         ]
+    }
+
+
+@router.get("/extension/vessels/{registration_number}")
+def get_vessel_for_extension(
+    registration_number: str,
+    authorization: Optional[str] = Header(default=None),
+    db: Session = Depends(get_db)
+):
+    """
+    Tra cứu dữ liệu tàu cho Chrome Extension bằng số đăng ký.
+    """
+    verify_extension_token(authorization)
+
+    normalized_registration = registration_number.strip().upper()
+    vessel = db.query(VesselORM).filter(
+        VesselORM.registration_number == normalized_registration
+    ).first()
+
+    if not vessel:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Không tìm thấy dữ liệu tàu theo số đăng ký."
+        )
+
+    return {
+        "registration_number": vessel.registration_number,
+        "owner_name": vessel.owner_name,
+        "address": vessel.address,
+        "phone_number": "",
+        "dossier_content": "",
+        "province_code": vessel.province_code,
+        "province_name": vessel.province_name,
+        "lmax": vessel.lmax,
+        "power_kw": vessel.power_kw,
+        "material": vessel.material,
+        "inspection_type": vessel.inspection_type,
+        "length_group": vessel.length_group,
+        "valid_until": vessel.valid_until,
+        "issued_date": vessel.issued_date,
+        "fishing_gear": vessel.fishing_gear
     }
 
 

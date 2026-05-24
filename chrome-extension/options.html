@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <title>VNF Auto Crosscheck - Options</title>
+    <style>
+      body {
+        font-family: "Segoe UI", sans-serif;
+        margin: 24px;
+        color: #1f1f1f;
+        max-width: 720px;
+      }
+
+      h1 {
+        font-size: 22px;
+        margin-bottom: 16px;
+      }
+
+      form {
+        display: grid;
+        gap: 16px;
+      }
+
+      label {
+        display: grid;
+        gap: 6px;
+        font-weight: 600;
+      }
+
+      input {
+        padding: 10px 12px;
+        border: 1px solid #c7c7c7;
+        border-radius: 6px;
+        font-size: 14px;
+      }
+
+      button {
+        width: fit-content;
+        padding: 10px 18px;
+        border: 0;
+        border-radius: 6px;
+        background: #0b57d0;
+        color: #fff;
+        cursor: pointer;
+      }
+
+      .hint {
+        font-size: 13px;
+        color: #555;
+      }
+
+      #status {
+        min-height: 20px;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Cấu hình API</h1>
+    <form id="settings-form">
+      <label>
+        API Base URL
+        <input id="apiBaseUrl" type="url" placeholder="http://localhost:8000">
+      </label>
+
+      <label>
+        API Path Template
+        <input id="apiPathTemplate" type="text" placeholder="/api/extension/vessels/{registrationNumber}">
+      </label>
+
+      <label>
+        Bearer Token
+        <input id="authToken" type="password" placeholder="Nhập token truy cập API">
+      </label>
+
+      <label>
+        Timeout (ms)
+        <input id="requestTimeoutMs" type="number" min="1000" step="1000" placeholder="15000">
+      </label>
+
+      <button type="submit">Lưu cấu hình</button>
+      <div id="status" aria-live="polite"></div>
+      <div class="hint">
+        API path template phải chứa biến <code>{registrationNumber}</code>.
+      </div>
+    </form>
+    <script src="options.js"></script>
+  </body>
+  </html>

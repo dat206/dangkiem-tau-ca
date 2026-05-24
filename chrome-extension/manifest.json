@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "VNF Auto Crosscheck",
+  "version": "0.1.0",
+  "description": "Đối soát dữ liệu tàu cá từ API riêng và tự động điền form trên vnf.tongcucthuysan.gov.vn.",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://vnf.tongcucthuysan.gov.vn/*",
+    "http://localhost:8000/*",
+    "https://api-name.onrender.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://vnf.tongcucthuysan.gov.vn/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_page": "options.html",
+  "action": {
+    "default_title": "VNF Auto Crosscheck"
+  }
+}

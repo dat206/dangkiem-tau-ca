@@ -146,6 +146,69 @@ curl http://localhost:8000/api/health
 
 ---
 
+### 4. Extension Lookup By Registration Number
+
+**GET** `/api/extension/vessels/{registrationNumber}`
+
+Tra cứu dữ liệu tàu cho Chrome Extension theo số đăng ký.
+
+**Headers:**
+```
+Authorization: Bearer <EXTENSION_API_TOKEN>
+```
+
+**Example:**
+```bash
+curl -H "Authorization: Bearer your-token" \
+  http://localhost:8000/api/extension/vessels/QN-90599-TS
+```
+
+**Response (200 OK):**
+```json
+{
+  "registration_number": "QN-90599-TS",
+  "owner_name": "Nguyen Van A",
+  "address": "Ha Long, Quang Ninh",
+  "phone_number": "",
+  "dossier_content": "",
+  "province_code": "QN",
+  "province_name": "Quang Ninh",
+  "lmax": 18.5,
+  "power_kw": 45.0,
+  "material": "Thep",
+  "inspection_type": "Hang nam",
+  "length_group": "15-20m",
+  "valid_until": "2025-01-15",
+  "issued_date": "2024-01-15",
+  "fishing_gear": "Luoi re"
+}
+```
+
+**Error Responses:**
+
+- **401 Unauthorized**
+  ```json
+  {
+    "detail": "Thiếu Bearer token."
+  }
+  ```
+
+- **403 Forbidden**
+  ```json
+  {
+    "detail": "Bearer token không hợp lệ."
+  }
+  ```
+
+- **404 Not Found**
+  ```json
+  {
+    "detail": "Không tìm thấy dữ liệu tàu theo số đăng ký."
+  }
+  ```
+
+---
+
 ## 📊 Response Models
 
 ### VesselData
