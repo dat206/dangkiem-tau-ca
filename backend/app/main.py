@@ -1,7 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from .database import Base, engine
+from .models import vessel  # noqa: F401
 from .routers.report import router as report_router
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Fishing Vessel Report API",
@@ -14,6 +18,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
+        "http://127.0.0.1:5173",
         "http://localhost:3000",
     ],
     allow_credentials=True,
