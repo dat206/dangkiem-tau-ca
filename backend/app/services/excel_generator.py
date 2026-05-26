@@ -1,13 +1,4 @@
-"""Placeholder: Excel Generator - Tạo file .xlsx báo cáo
-
-Các hàm chính:
-- generate_summary_sheet(data) -> file
-- generate_quarterly_report(data, quarter, year) -> file
-- create_report_zip(summary_file, quarterly_file) -> zip_file
-"""
-<<<<<<< Updated upstream
-=======
-Excel Generator Service
+"""Excel Generator Service
 
 This module handles Excel file generation for vessel reports.
 Uses openpyxl for Excel creation and returns BytesIO for streaming.
@@ -394,6 +385,3 @@ def generate_quarterly_summary_excel(vessels: List[Any], quarter: int, year: int
     wb.save(output)
     output.seek(0)
     return output
-
-
->>>>>>> Stashed changes

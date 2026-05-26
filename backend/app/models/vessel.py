@@ -1,26 +1,16 @@
-"""Models - Pydantic + SQLAlchemy"""
-from datetime import datetime, date
+"""Pydantic and SQLAlchemy models for fishing vessel reports."""
+from datetime import date, datetime
 from enum import Enum
-<<<<<<< Updated upstream
-from pydantic import BaseModel, Field
-from sqlalchemy import Column, String, Float, DateTime, Integer, Text
-=======
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import Column, Date, DateTime, Float, Integer, String, Text, UniqueConstraint
 
->>>>>>> Stashed changes
 from app.database import Base
 
 
-# ========== ENUM ==========
 class MaterialEnum(str, Enum):
-<<<<<<< Updated upstream
-    """Vật liệu tàu"""
-=======
     """Hull material."""
->>>>>>> Stashed changes
     GO = "Gỗ"
     THEP = "Thép"
     FRP = "FRP"
@@ -28,23 +18,6 @@ class MaterialEnum(str, Enum):
 
 
 class InspectionTypeEnum(str, Enum):
-<<<<<<< Updated upstream
-    """Hình thức kiểm tra"""
-    HANG_NAM = "Hàng năm"
-    DINH_KY = "Định kỳ"
-    TREN_DA = "Trên đà"
-    GIAM_SAT = "Giám sát"
-    CAI_HOAN = "Cải hoán"
-
-
-class LengthGroupEnum(str, Enum):
-    """Nhóm chiều dài Lmax"""
-    G12_15 = "12-15m"
-    G15_20 = "15-20m"
-    G20_24 = "20-24m"
-    G24_30 = "24-30m"
-    G30_PLUS = "≥30m"
-=======
     """Inspection type."""
     HANG_NAM = "hang_nam"
     DINH_KY = "dinh_ky"
@@ -66,37 +39,9 @@ class LengthGroupEnum(str, Enum):
     L24_30 = "L24_30"
     L30_PLUS = "L30_plus"
     KHONG_XAC_DINH = "khong_xac_dinh"
->>>>>>> Stashed changes
 
 
-# ========== PYDANTIC MODELS (Request/Response) ==========
 class VesselData(BaseModel):
-<<<<<<< Updated upstream
-    """Dữ liệu tàu từ DOCX parser"""
-    registration_number: str
-    owner_name: str
-    address: str
-    province_code: str
-    province_name: str
-    lmax: float = Field(..., gt=0, description="Chiều dài tàu (m)")
-    power_kw: float = Field(..., gt=0, description="Công suất máy (KW)")
-    material: MaterialEnum
-    inspection_type: InspectionTypeEnum
-    length_group: LengthGroupEnum
-    valid_until: date
-    issued_date: date
-    fishing_gear: str
-
-    class Config:
-        from_attributes = True
-
-
-class ReportConfig(BaseModel):
-    """Cấu hình xuất báo cáo"""
-    quarter: int = Field(..., ge=1, le=4, description="Quý (1-4)")
-    year: int = Field(..., ge=2000, le=2100, description="Năm")
-    provinces: list[str] = Field(..., min_items=1, description="Danh sách tỉnh")
-=======
     """Validated vessel data extracted from a certificate DOCX file."""
 
     model_config = ConfigDict(
@@ -150,11 +95,13 @@ class ReportConfig(BaseModel):
         if any(not province for province in provinces):
             raise ValueError("province codes must not be blank")
         return provinces
->>>>>>> Stashed changes
 
 
 class ReportHistoryItem(BaseModel):
-    """Thông tin lịch sử xuất báo cáo"""
+    """Report generation history item."""
+
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     created_at: datetime
     quarter: int
@@ -162,20 +109,11 @@ class ReportHistoryItem(BaseModel):
     file_count: int
     provinces: str
 
-    class Config:
-        from_attributes = True
 
-
-# ========== SQLALCHEMY MODELS (Database) ==========
 class VesselORM(Base):
-<<<<<<< Updated upstream
-    """Model Tàu - lưu vào database"""
-    __tablename__ = "vessels"
-=======
     """Database model for vessels."""
 
     __tablename__ = "vessel_inspections"
->>>>>>> Stashed changes
 
     id = Column(Integer, primary_key=True, index=True)
     registration_no = Column(String(25), nullable=True, index=True)
@@ -207,7 +145,8 @@ class VesselORM(Base):
 
 
 class ReportHistoryORM(Base):
-    """Model Lịch sử báo cáo"""
+    """Database model for report history."""
+
     __tablename__ = "report_history"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -215,7 +154,7 @@ class ReportHistoryORM(Base):
     quarter = Column(Integer)
     year = Column(Integer)
     file_count = Column(Integer)
-    provinces = Column(String(500))  # JSON hoặc comma-separated
-    file_path = Column(String(500))  # Path to saved Excel files
-    status = Column(String(20), default="success")  # success, partial_error, error
+    provinces = Column(String(500))
+    file_path = Column(String(500))
+    status = Column(String(20), default="success")
     error_message = Column(Text, nullable=True)

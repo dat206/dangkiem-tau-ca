@@ -1,6 +1,4 @@
-<<<<<<< Updated upstream
-from fastapi import APIRouter, UploadFile, File
-=======
+
 import tempfile
 import os
 import zipfile
@@ -138,18 +136,6 @@ async def upload_vessel_documents(
         for path in saved_temp_paths:
             if path.exists():
                 path.unlink()
->>>>>>> Stashed changes
-
-router = APIRouter()
-
-@router.post("/generate-report")
-<<<<<<< Updated upstream
-async def generate_report(file: UploadFile = File(...)):
-    return {
-        "filename": file.filename,
-        "content_type": file.content_type
-    }
-=======
 async def generate_report(
     files: List[UploadFile] = File(...),
     quarter: int = Form(...),
@@ -259,4 +245,3 @@ async def generate_report(
         for path in saved_temp_paths:
             if path.exists():
                 path.unlink()
->>>>>>> Stashed changes

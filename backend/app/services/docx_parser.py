@@ -1,6 +1,3 @@
-<<<<<<< Updated upstream
-"""DOCX Parser Service - Xử lý và trích xuất dữ liệu từ file DOCX"""
-=======
 """DOCX Parser for fishing vessel safety certificates.
 
 Extracts structured vessel data from the standardised DOCX format
@@ -362,4 +359,3 @@ def parse_vessel_docx(file_path: str) -> VesselData:
         )
     except ValidationError as exc:
         raise ParseError(f"Lỗi xác thực dữ liệu: {exc}")
->>>>>>> Stashed changes
