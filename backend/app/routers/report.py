@@ -4,7 +4,7 @@ import zipfile
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query, status
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
@@ -115,11 +115,11 @@ def _history_response(item: ReportHistoryORM) -> dict:
 
 @router.get("/history")
 def get_report_history(
-    quarter: Optional[int] = None,
-    year: Optional[int] = None,
-    created_by: Optional[str] = None,
-    skip: int = 0,
-    limit: int = 10,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
+    quarter: Optional[int] = Query(None, ge=1, le=4),
+    year: Optional[int] = Query(None, ge=2000, le=2100),
+    created_by: Optional[str] = Query(None),
     db: Session = Depends(get_db)
 ):
     """
