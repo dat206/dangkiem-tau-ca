@@ -9,10 +9,11 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models.vessel import VesselORM, ReportHistoryORM
+from app.models.vessel import ReportHistoryORM
 from app.services.docx_parser import parse_vessel_docx
 from app.services.data_processor import classify_length_group, get_province_name, aggregate_vessels
 from app.services.excel_generator import generate_vessel_excel, generate_quarterly_summary_excel
+from app.services.batch_processor import save_vessel_data
 
 router = APIRouter(
     prefix="/reports",
@@ -119,30 +120,35 @@ def get_report_history(
     limit: int = Query(10, ge=1, le=100),
     quarter: Optional[int] = Query(None, ge=1, le=4),
     year: Optional[int] = Query(None, ge=2000, le=2100),
-    created_by: Optional[str] = Query(None),
-    db: Session = Depends(get_db),
+    created_by: Optional[str] = Query(None), # Giữ từ feature/#028
+    db: Session = Depends(get_db), # Giữ từ development
 ):
-    """
-    Lấy danh sách lịch sử các lượt báo cáo trích xuất dữ liệu,
-    hỗ trợ lọc theo quý, năm và phân trang.
-    """
+    """Lấy danh sách lịch sử các lượt báo cáo trích xuất dữ liệu,
+    hỗ trợ lọc theo quý, năm và phân trang."""
     query = db.query(ReportHistoryORM)
     if quarter is not None:
         query = query.filter(ReportHistoryORM.quarter == quarter)
     if year is not None:
         query = query.filter(ReportHistoryORM.year == year)
+    
+    # Thêm logic lọc theo người tạo từ feature/#028
     if created_by:
         query = query.filter(ReportHistoryORM.created_by == created_by)
-    
+        
     total = query.count()
-    items = query.order_by(ReportHistoryORM.created_at.desc()).offset(skip).limit(limit).all()
-    
+    items = (
+        query.order_by(ReportHistoryORM.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
     return {
         "total": total,
         "items": [
             _history_response(item)
             for item in items
-        ]
+        ],
     }
 
 
@@ -160,28 +166,29 @@ def get_report_creators(db: Session = Depends(get_db)):
 
 @router.get("/history/{report_id}/download")
 def download_report_history(report_id: int, db: Session = Depends(get_db)):
-    """
-    Tải tệp ZIP báo cáo đã được lưu trong lịch sử theo ID.
-    """
+    """Tải tệp ZIP báo cáo đã được lưu trong lịch sử theo ID."""
     item = db.query(ReportHistoryORM).filter(ReportHistoryORM.id == report_id).first()
     if not item:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Không tìm thấy lịch sử báo cáo này."
         )
-    
+
     if not item.file_path or not Path(item.file_path).exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="File báo cáo không tồn tại trên server hoặc đã bị xóa."
-        )
-    
+       # Logic kiểm tra file tồn tại ở phía trên (dòng 178-180 cũ)
+    )
+
+    # 1. Đoạn code lấy từ feature/#028 (Chú ý thụt lề bằng với dòng 'return' phía dưới)
     if item.created_at and datetime.utcnow() > item.created_at + timedelta(days=30):
         raise HTTPException(
             status_code=status.HTTP_410_GONE,
             detail="File báo cáo đã quá hạn tải lại 30 ngày."
         )
 
+    # 2. Đoạn code lấy từ development
     return FileResponse(
         path=item.file_path,
         media_type="application/zip",
@@ -377,7 +384,32 @@ async def upload_vessel_documents(
         # Import run_batch_processor_api inside handler to avoid circular reference or runtime conflicts
         from app.services.batch_processor import run_batch_processor_api
         processing_results = run_batch_processor_api(file_paths=saved_temp_paths, db=db, max_threads=4)
-        success_count = sum(1 for item in processing_results if item['status'] == 'Thành công')
+        success_count = sum(1 for item in processing_results if item.get("ok"))
+        success_provinces = sorted(
+            {
+                item.get("ma_tinh")
+                for item in processing_results
+                if item.get("ok") and item.get("ma_tinh")
+            }
+        )
+        if success_count == len(processing_results):
+            history_status = "success"
+        elif success_count > 0:
+            history_status = "partial"
+        else:
+            history_status = "error"
+
+        history_item = ReportHistoryORM(
+            quarter=None,
+            year=datetime.now().year,
+            file_count=success_count,
+            provinces=",".join(success_provinces),
+            file_path=None,
+            status=history_status,
+            error_message=None if success_count else "Không có file nào trích xuất thành công.",
+        )
+        db.add(history_item)
+        db.commit()
         
         return {
             "message": f"Xử lý hoàn tất {len(processing_results)} file tài liệu.",
@@ -463,20 +495,7 @@ async def generate_report(
                 }
                 
                 # Lưu/Cập nhật vào Database
-                existing_vessel = db.query(VesselORM).filter(
-                    VesselORM.registration_number == vessel_dict['so_dang_ky']
-                ).first()
-                
-                if existing_vessel:
-                    for k, v in vessel_attrs.items():
-                        setattr(existing_vessel, k, v)
-                else:
-                    new_vessel = VesselORM(
-                        registration_number=vessel_dict['so_dang_ky'],
-                        **vessel_attrs
-                    )
-                    db.add(new_vessel)
-                
+                save_vessel_data(db, vessel_dict)
                 db.commit()
                 
                 # Danh sách dữ liệu cho Bảng kê tổng hợp (Keys: registration_no, owner, lmax, engine_power)
