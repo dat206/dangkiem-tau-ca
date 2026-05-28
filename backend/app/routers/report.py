@@ -120,7 +120,7 @@ def get_report_history(
     quarter: Optional[int] = Query(None, ge=1, le=4),
     year: Optional[int] = Query(None, ge=2000, le=2100),
     created_by: Optional[str] = Query(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Lấy danh sách lịch sử các lượt báo cáo trích xuất dữ liệu,
