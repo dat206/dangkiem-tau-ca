@@ -1,6 +1,7 @@
 """SQLAlchemy ORM model and Pydantic schemas for User authentication."""
 from datetime import datetime
 from enum import Enum
+from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from sqlalchemy import Boolean, Column, DateTime, Integer, String
@@ -54,6 +55,18 @@ class UserLoginRequest(BaseModel):
     password: str
 
 
+class UserUpdateRequest(BaseModel):
+    """Payload to update an existing user."""
+
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    full_name: Optional[str] = Field(None, min_length=2, max_length=255, description="Họ và tên đầy đủ")
+    email: Optional[EmailStr] = Field(None, description="Email đăng nhập")
+    password: Optional[str] = Field(None, min_length=6, description="Mật khẩu mới")
+    role: Optional[UserRoleEnum] = Field(None)
+    is_active: Optional[bool] = Field(None)
+
+
 class UserResponse(BaseModel):
     """Public user data returned after login/register."""
 
@@ -65,6 +78,7 @@ class UserResponse(BaseModel):
     role: str
     is_active: bool
     created_at: datetime
+    last_login: Optional[datetime] = None
 
 
 class AuthResponse(BaseModel):
