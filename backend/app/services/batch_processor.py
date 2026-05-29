@@ -93,4 +93,4 @@ def run_batch_processor_api(file_paths: List[Path], db: Session, max_threads: in
                     file_data['status'] = 'Lỗi lưu DB'
                     file_data['error_msg'] = f"Lỗi Cơ sở dữ liệu: {str(db_err)}"
                     
-    return results
+    return results

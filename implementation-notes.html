@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Implementation Notes - Fishing Vessel Registrations</title>
+    <style>
+        :root {
+            --primary-color: #0b5345;
+            --primary-light: #e8f8f5;
+            --secondary-color: #117a65;
+            --text-dark: #2c3e50;
+            --text-light: #7f8c8d;
+            --bg-light: #f8f9fa;
+            --border-color: #e2e8f0;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', 'Inter', 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            background-color: var(--bg-light);
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 3rem;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+        }
+
+        header {
+            border-bottom: 2px solid var(--primary-light);
+            padding-bottom: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            font-size: 2.25rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        h1::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 32px;
+            background-color: var(--secondary-color);
+            border-radius: 4px;
+        }
+
+        .subtitle {
+            color: var(--text-light);
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        h2 {
+            color: var(--secondary-color);
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        p {
+            margin-bottom: 1rem;
+            color: #4a5568;
+        }
+
+        ul, ol {
+            margin-bottom: 1.5rem;
+            padding-left: 1.5rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            color: #4a5568;
+        }
+
+        .highlight {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        /* Tables styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.95rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th {
+            background-color: var(--primary-light);
+            color: var(--primary-color);
+            text-align: left;
+            font-weight: 700;
+            padding: 12px 16px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            color: #4d5866;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background-color: #fcfdfd;
+        }
+
+        /* Code snippets */
+        code {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background-color: #f1f5f9;
+            color: #e11d48;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background-color: #1e293b;
+            color: #f8fafc;
+            padding: 1.25rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1rem 0 1.5rem 0;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+            border-radius: 0;
+        }
+
+        /* Alerts and Callouts */
+        .callout {
+            border-left: 4px solid var(--secondary-color);
+            background-color: var(--primary-light);
+            padding: 1.25rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1.5rem 0;
+        }
+
+        .callout-title {
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.6rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 9999px;
+            text-transform: uppercase;
+        }
+
+        .badge-success {
+            background-color: #def7ec;
+            color: #03543f;
+        }
+
+        .badge-warning {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-info {
+            background-color: #e1effe;
+            color: #1e429f;
+        }
+
+        footer {
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            color: var(--text-light);
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Implementation Notes</h1>
+            <div class="subtitle">Báo cáo & Phân tích Đăng kiểm Tàu cá — May 2026</div>
+        </header>
+
+        <section>
+            <p>Tài liệu này tổng hợp các quyết định thiết kế, tùy chỉnh ngoài đặc tả (spec), các đánh đổi (tradeoffs), và các sửa đổi kỹ thuật được áp dụng trong quá trình triển khai hệ thống phân tích hồ sơ đăng kiểm tàu cá từ file Word mẫu (DOCX) vào cơ sở dữ liệu SQLite và xuất báo cáo Excel.</p>
+        </section>
+
+        <section>
+            <h2>1. Ánh xạ Hình thức Kiểm tra (Inspection Type Mapping)</h2>
+            <p>Theo yêu cầu bổ sung mới nhất, hình thức kiểm tra phải được phân loại nghiêm ngặt thành 4 nhóm chính. Các quy tắc ánh xạ được thiết lập như sau:</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mã Viết Tắt</th>
+                        <th>Hình thức kiểm tra</th>
+                        <th>Trạng thái</th>
+                        <th>Ghi chú</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>HN</code></td>
+                        <td><span class="highlight">Hàng năm</span></td>
+                        <td><span class="badge badge-success">Theo Spec</span></td>
+                        <td>Các đợt kiểm định định kỳ hàng năm.</td>
+                    </tr>
+                    <tr>
+                        <td><code>TĐ</code></td>
+                        <td><span class="highlight">Trên đà</span></td>
+                        <td><span class="badge badge-success">Theo Spec</span></td>
+                        <td>Kiểm tra phần dưới nước của vỏ tàu.</td>
+                    </tr>
+                    <tr>
+                        <td><code>ĐK</code></td>
+                        <td><span class="highlight">Định kỳ</span></td>
+                        <td><span class="badge badge-success">Theo Spec</span></td>
+                        <td>Kiểm tra toàn diện định kỳ theo chu kỳ lớn.</td>
+                    </tr>
+                    <tr>
+                        <td><em>Tất cả mã khác</em> (Ví dụ: <code>GS</code>, <code>CH</code>, <code>BT</code>, hoặc để trống)</td>
+                        <td><span class="highlight">Giám sát</span></td>
+                        <td><span class="badge badge-warning">Tùy biến mới</span></td>
+                        <td>Mặc định mọi giá trị khác hoặc không nhận diện được về hình thức <strong>Giám sát</strong>.</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="callout">
+                <div class="callout-title">Đánh đổi & Triển khai thực tế:</div>
+                <p>Trước đây, hệ thống có lưu trữ các hình thức <code>Cải hoán</code> hoặc <code>Không xác định</code>. Việc thu hẹp phạm vi này đảm bảo tính thống nhất của báo cáo theo yêu cầu của Sở Nông nghiệp và Phát triển Nông thôn nhưng sẽ làm giảm độ chi tiết của dữ liệu gốc trong database đối với các loại hồ sơ đặc biệt (như cải hoán vỏ tàu).</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>2. Nâng cấp Regex trích xuất Số đăng ký (Registration Number Extraction)</h2>
+            <p>Các file chứng nhận thuộc tỉnh Quảng Ngãi sử dụng tiền tố viết thường hoặc hỗn hợp (Ví dụ: <code>QNg-98227-TS</code>) khiến regex cũ <code>[A-ZĐ]{2,3}</code> bỏ sót hoàn toàn 5 file mẫu, dẫn đến lỗi <em>"Không tìm thấy Số đăng ký"</em>.</p>
+            <p><strong>Giải pháp:</strong> Nâng cấp biểu thức chính quy (Regex) trong <code>docx_parser.py</code> sang:</p>
+            <pre><code># Regex cũ:
+re.search(r"([A-ZĐ]{2,3}\s*-\s*\d+\s*-\s*[Tt][Ss])", text)
+
+# Regex mới (Hỗ trợ mixed-case và độ dài từ 2 đến 4 ký tự):
+re.search(r"([a-zA-ZĐđ]{2,4}\s*-\s*\d+\s*-\s*[Tt][Ss])", text)</code></pre>
+            <p>Sự thay đổi này giúp tỷ lệ phân tích thành công tăng từ <strong>94/99 (94.9%)</strong> lên <strong>99/99 (100%)</strong> đối với toàn bộ tập dữ liệu mẫu trong thư mục <code>data/</code>.</p>
+        </section>
+
+        <section>
+            <h2>3. Bổ sung Danh mục Mã tỉnh thành (Province Codes Expansion)</h2>
+            <p>Khi quét tập dữ liệu, xuất hiện nhiều mã tỉnh mới không nằm trong bộ mã hóa cứng ban đầu. Chúng tôi đã mở rộng danh mục <code>PROVINCE_CODES</code> trong <code>backend/app/utils/constants.py</code> để hiển thị tên tiếng Việt đầy đủ trên các bảng biểu thống kê:</p>
+            <ul>
+                <li><code>QNG</code> &rarr; <strong>Quảng Ngãi</strong> (Mới bổ sung để hỗ trợ các tàu QNg)</li>
+                <li><code>QT</code> &rarr; <strong>Quảng Trị</strong> (Mới bổ sung)</li>
+                <li><code>TB</code> &rarr; <strong>Thái Bình</strong> (Mới bổ sung)</li>
+                <li><code>NĐ</code> &rarr; <strong>Nam Định</strong> (Mới bổ sung)</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>4. Cơ chế đồng bộ hóa cơ sở dữ liệu (Upsert Strategy)</h2>
+            <p>Để tối ưu hóa việc chạy lặp đi lặp lại nhiều lần trên cùng một thư mục dữ liệu, tập lệnh <code>process_data_folder.py</code> và API sử dụng chiến lược <strong>Upsert</strong> (Insert or Update):</p>
+            <ul>
+                <li>Kiểm tra xem số đăng ký (ví dụ: <code>QN-90599-TS</code>) đã tồn tại trong bảng <code>vessels</code> chưa.</li>
+                <li>Nếu đã tồn tại: Cập nhật các thông số kỹ thuật mới nhất từ file vừa phân tích.</li>
+                <li>Nếu chưa tồn tại: Tạo bản ghi mới.</li>
+            </ul>
+            <p>Điều này ngăn ngừa lỗi trùng lặp khóa chính hoặc tạo các bản ghi rác khi người dùng thực hiện nhập lại tệp tin.</p>
+        </section>
+
+        <section>
+            <h2>5. Cấu trúc và Định dạng Báo cáo Excel</h2>
+            <p>Hệ thống tự động tạo 2 tệp báo cáo chuyên nghiệp đặt trực tiếp tại thư mục <code>data/</code>:</p>
+            <ol>
+                <li><strong><code>tong_hop_ghi_so.xlsx</code> (Bảng kê chi tiết):</strong> Chứa danh sách toàn bộ các tàu được phân tích thành công kèm công thức Excel tự động tính tổng số tàu: <code>=COUNTA(B2:B[N])</code>. Sử dụng GridLines ẩn và đóng băng dòng tiêu đề để tăng tính tiện dụng.</li>
+                <li><strong><code>bao_cao_thong_ke.xlsx</code> (Báo cáo thống kê tổng hợp):</strong> Gồm 4 bảng phân loại trực quan theo: Tỉnh thành, Nhóm chiều dài Lmax, Vật liệu vỏ, và Hình thức kiểm tra. Tổng số tàu trong mỗi bảng được tính bằng công thức động <code>=SUM(...)</code> để dễ dàng kiểm chứng chéo số liệu.</li>
+            </ol>
+        </section>
+
+        <footer>
+            <p>&copy; 2026 Fishing Vessel Registration System. All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>
