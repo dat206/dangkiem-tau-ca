@@ -17,15 +17,16 @@ from app.models.vessel import (  # noqa: E402
 
 def make_vessel_data(**overrides):
     data = {
-        "registration_number": "QN-90599-TS",
+        "registration_no": "QN-90599-TS",
         "owner_name": "Hoàng Văn Sinh",
         "address": "xã Đường Hoa, tỉnh Quảng Ninh",
         "province_code": "qn",
         "lmax": 12.8,
         "power_kw": 169.92,
-        "material": MaterialEnum.GO,
-        "inspection_type": InspectionTypeEnum.HANG_NAM,
-        "length_group": LengthGroupEnum.G12_15,
+        "material": MaterialEnum.GO.value,
+        "inspection_type": InspectionTypeEnum.HANG_NAM.value,
+        "length_group": LengthGroupEnum.L12_15.value,
+        "inspection_date": date(2026, 5, 9),
         "valid_until": date(2027, 5, 9),
         "issued_date": date(2026, 5, 9),
         "fishing_gear": "Lưới rê",
@@ -37,10 +38,10 @@ def make_vessel_data(**overrides):
 def test_vessel_data_validates_types_and_normalizes_province_code():
     vessel = VesselData(**make_vessel_data())
 
-    assert vessel.registration_number == "QN-90599-TS"
+    assert vessel.registration_no == "QN-90599-TS"
     assert vessel.province_code == "QN"
-    assert vessel.material is MaterialEnum.GO
-    assert vessel.length_group is LengthGroupEnum.G12_15
+    assert vessel.material == MaterialEnum.GO.value
+    assert vessel.length_group == LengthGroupEnum.L12_15.value
 
 
 def test_vessel_data_rejects_non_positive_lmax():
@@ -64,7 +65,7 @@ def test_models_generate_json_schema_for_api_docs():
     vessel_schema = VesselData.model_json_schema()
     config_schema = ReportConfig.model_json_schema()
 
-    assert "registration_number" in vessel_schema["properties"]
+    assert "registration_no" in vessel_schema["properties"]
     assert "quarter" in config_schema["properties"]
     assert config_schema["properties"]["quarter"]["minimum"] == 1
     assert config_schema["properties"]["quarter"]["maximum"] == 4
