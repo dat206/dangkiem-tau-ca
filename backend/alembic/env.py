@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 
 from app.database import Base
 from app.models.vessel import ReportHistoryORM, VesselORM
+from app.models.user import UserORM  # noqa: F401 — registers "users" table with metadata
 
 config = context.config
 load_dotenv()

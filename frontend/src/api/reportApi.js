@@ -1,70 +1,94 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
-const apiClient = axios.create({
-  baseURL: `${API_URL}/api`,
-  timeout: 60000, // 1 minute timeout for file upload
-});
+/**
+ * Lấy lịch sử xuất báo cáo.
+ */
+export const getReportHistory = async (params) => {
+  const response = await axios.get(`${API_URL}/reports/history`, { params });
+  return response.data;
+};
 
-// API Functions
+/**
+ * Tải tệp ZIP báo cáo từ lịch sử theo ID.
+ */
+export const downloadReportHistory = async (reportId) => {
+  const response = await axios.get(`${API_URL}/reports/history/${reportId}/download`, {
+    responseType: 'blob'
+  });
+  return response.data;
+};
+
+/**
+ * Trích xuất DOCX và sinh báo cáo ZIP trực tiếp.
+ */
 export const generateReport = async (files, config) => {
-  /**
-   * Generate report từ list files DOCX
-   * @param {File[]} files - Array of DOCX files
-   * @param {Object} config - { quarter, year, provinces }
-   * @returns {Promise<Blob>} - ZIP file
-   */
   const formData = new FormData();
+  files.forEach((file) => {
+    formData.append("files", file);
+  });
+  formData.append("quarter", config.quarter);
+  formData.append("year", config.year);
   
-  files.forEach(file => formData.append('files', file));
-  formData.append('quarter', config.quarter);
-  formData.append('year', config.year);
-  formData.append('provinces', config.provinces.join(','));
+  // Hỗ trợ cả mảng tỉnh thành và chuỗi tỉnh thành
+  const provinceStr = Array.isArray(config.provinces) 
+    ? config.provinces.join(',') 
+    : config.provinces;
+  formData.append("provinces", provinceStr);
 
-  try {
-    const response = await apiClient.post('/generate-report', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-      responseType: 'blob',
-    });
-    
-    return response.data;
-  } catch (error) {
-    console.error('Error generating report:', error);
-    throw error;
-  }
+  const response = await axios.post(`${API_URL}/reports/generate-report`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    },
+    responseType: 'blob'
+  });
+  return response.data;
 };
 
-export const getReportHistory = async (skip = 0, limit = 10) => {
-  /**
-   * Lấy lịch sử xuất báo cáo
-   * @param {number} skip - Pagination offset
-   * @param {number} limit - Number of records
-   * @returns {Promise<Array>} - List of reports
-   */
-  try {
-    const response = await apiClient.get('/reports/history', {
-      params: { skip, limit },
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching history:', error);
-    throw error;
-  }
+/**
+ * Tải lên hàng loạt DOCX và trích xuất dữ liệu lưu DB.
+ */
+export const uploadBatchReports = async (files) => {
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append("files", file);
+  });
+
+  const response = await axios.post(`${API_URL}/reports/upload-batch`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+
+  return response.data;
 };
 
+/**
+ * Helper tải xuống file dạng Blob từ trình duyệt.
+ */
 export const downloadBlob = (blob, filename) => {
-  /**
-   * Trigger download of blob file
-   * @param {Blob} blob - File blob
-   * @param {string} filename - Download filename
-   */
-  const url = window.URL.createObjectURL(blob);
+  const url = window.URL.createObjectURL(new Blob([blob]));
   const link = document.createElement('a');
   link.href = url;
-  link.download = filename;
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
   link.click();
-  window.URL.revokeObjectURL(url);
+  link.parentNode.removeChild(link);
 };
 
-export default apiClient;
+export const reportApi = {
+  getConfigs: async () => {
+    const response = await axios.get(`${API_URL}/reports/configs`);
+    return response.data;
+  },
+  saveConfig: async (config) => {
+    const response = await axios.post(`${API_URL}/reports/configs`, config);
+    return response.data;
+  },
+  uploadBatchReports,
+  getReportHistory,
+  downloadReportHistory,
+  generateReport,
+  downloadBlob
+};
