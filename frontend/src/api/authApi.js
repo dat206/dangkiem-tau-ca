@@ -44,7 +44,7 @@ export const logoutApi = async (token) => {
       {},
       { headers: { Authorization: `Bearer ${token}` } }
     );
-  } catch (_) {
+  } catch {
     // Bỏ qua lỗi mạng — vẫn xoá storage phía client
   }
 };

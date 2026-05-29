@@ -6,13 +6,15 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
-  const [loading, setLoading] = useState(true); // kiểm tra token lưu trong storage khi khởi động
+  const [loading, setLoading] = useState(() => {
+    const saved = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+    return !!saved;
+  }); // kiểm tra token lưu trong storage khi khởi động
 
   // ── Khởi tạo: đọc token từ storage và xác thực với server ──────────────────
   useEffect(() => {
     const saved = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
     if (!saved) {
-      setLoading(false);
       return;
     }
     getMeApi(saved)
@@ -61,6 +63,7 @@ export function AuthProvider({ children }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth phải được dùng trong AuthProvider');

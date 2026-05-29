@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, Header, Badge, Icon, Button, IconBtn, BrandMark } from './chrome';
 import { getUsers, createUser, updateUser, deleteUser } from '../api/userApi';
 
@@ -16,19 +16,32 @@ export function AdminUsersScreen({ density }) {
   const [confirm, setConfirm] = useState(null);
 
   const loadUsers = async () => {
-    setLoading(true);
     try {
       const data = await getUsers();
       setUsers(data);
     } catch (err) {
       console.error(err);
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadUsers();
+    let active = true;
+    getUsers()
+      .then((data) => {
+        if (active) {
+          setUsers(data);
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        if (active) {
+          setLoading(false);
+        }
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const filteredUsers = useMemo(() => {
@@ -370,7 +383,7 @@ export function AdminUsersScreen({ density }) {
 
 // ─── ADMIN / SETTINGS ────────────────────────────────────────────────────────
 export function AdminSettingsScreen() {
-  const [provs, setProvs] = useState([
+  const [provs] = useState([
     { code:"QN", name:"Quảng Ninh" },
     { code:"HP", name:"Hải Phòng" },
     { code:"TH", name:"Thanh Hóa" },

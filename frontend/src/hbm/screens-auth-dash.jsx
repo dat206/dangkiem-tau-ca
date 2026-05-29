@@ -1,6 +1,5 @@
-import React from 'react';
-import { Card, Header, Badge, Icon, inspTone } from './chrome';
-import { RECENT_UPLOADS, PROVINCE_TOTALS, INSP_TOTALS, provName } from './data';
+import { Card, Header, Badge, Icon } from './chrome';
+import { RECENT_UPLOADS, PROVINCE_TOTALS, INSP_TOTALS, provName, inspTone } from './data';
 
 // ─── Stat card variants ──────────────────────────────────────────────────────
 function StatCard({ label, value, icon, trend, sub, layout = "stacked", color = "primary" }) {
@@ -84,23 +83,21 @@ function BarChartProvince({ data }) {
 function DonutInsp({ data }) {
   const total = data.reduce((s,d)=>s+d.value, 0);
   const r = 64, c = 2 * Math.PI * r;
-  let offset = 0;
   return (
     <div style={{display:"flex", gap:24, alignItems:"center"}}>
       <svg width="180" height="180" viewBox="0 0 180 180">
         <circle cx="90" cy="90" r={r} fill="none" stroke="var(--surface-page)" strokeWidth="22"/>
         {data.map((d,i) => {
           const len = (d.value / total) * c;
-          const seg = (
+          const currentOffset = data.slice(0, i).reduce((sum, item) => sum + (item.value / total) * c, 0);
+          return (
             <circle key={i} cx="90" cy="90" r={r} fill="none"
               stroke={d.color} strokeWidth="22" strokeLinecap="butt"
               strokeDasharray={`${len} ${c-len}`}
-              strokeDashoffset={-offset}
+              strokeDashoffset={-currentOffset}
               transform="rotate(-90 90 90)"
             />
           );
-          offset += len;
-          return seg;
         })}
         <text x="90" y="88" textAnchor="middle" fontSize="22" fontWeight="700" fill="var(--text-strong)">{total}</text>
         <text x="90" y="106" textAnchor="middle" fontSize="11" fill="var(--text-soft)">tổng</text>

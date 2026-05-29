@@ -43,7 +43,7 @@ export const Icon = ({ name, size = 18, ...rest }) => {
   );
 };
 
-export const NAV_ICON = {
+const NAV_ICON = {
   "dashboard": "home",
   "upload": "upload",
   "vessels": "db",
@@ -103,8 +103,7 @@ export const Badge = ({ tone = "blue", soft = true, children, dot = false, size 
   );
 };
 
-export const inspTone   = (k) => ({ HN:"blue", TĐ:"purple", ĐK:"green", GS:"amber" })[k] || "gray";
-export const hullTone   = (m) => ({ "Gỗ":"brown", "Thép":"slate", "FRP":"teal" })[m] || "gray";
+
 
 export const Card = ({ children, style, pad = 20, ...rest }) => (
   <div style={{

@@ -1,9 +1,9 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { Card, Header, Badge, Icon, Button, IconBtn, EmptyState, inspTone, hullTone } from './chrome';
-import { VESSELS, PROVINCES, provName, inspLabel, lmaxGroup, REPORT_HISTORY, QUARTERS } from './data';
+import { useState, useMemo } from 'react';
+import { Card, Header, Badge, Icon, Button, IconBtn, EmptyState } from './chrome';
+import { VESSELS, PROVINCES, provName, inspLabel, lmaxGroup, REPORT_HISTORY, QUARTERS, inspTone, hullTone } from './data';
 
 // ─── UPLOAD ──────────────────────────────────────────────────────────────────
-export function UploadScreen({ density }) {
+export function UploadScreen() {
   const [files, setFiles] = useState([
     { name: "417_90599_ĐK_QN.docx", size: 142, status: "ok",   parsed: { reg:"QN-90599-TS", owner:"Nguyễn Văn An",    prov:"Quảng Ninh",  lmax:18.5, insp:"ĐK" } },
     { name: "418_90523_HN_QN.docx", size: 138, status: "dup",  msg:"Đã tồn tại trong CSDL, bỏ qua", existingId: 2 },

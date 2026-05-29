@@ -135,3 +135,6 @@ export const AppData = {
   QUARTERS, REPORT_HISTORY, USERS, NAV_MAIN, NAV_ADMIN,
   provName, inspLabel, lmaxGroup,
 };
+
+export const inspTone = (k) => ({ HN: "blue", TĐ: "purple", ĐK: "green", GS: "amber" })[k] || "gray";
+export const hullTone = (m) => ({ "Gỗ": "brown", "Thép": "slate", "FRP": "teal" })[m] || "gray";
