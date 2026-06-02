@@ -1,0 +1,1078 @@
+﻿body {
+    padding-top: 50px;
+    padding-bottom: 20px;
+}
+
+/* Set padding to keep content from hitting the edges */
+.body-content {
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+/* Set width on the form input elements since they're 100% wide by default */
+input,
+select,
+textarea {
+    max-width: 280px;
+}
+
+/* styles for validation helpers */
+.field-validation-error {
+    color: #b94a48;
+}
+
+.field-validation-valid {
+    display: none;
+}
+
+input.input-validation-error {
+    border: 1px solid #b94a48;
+}
+
+input[type="checkbox"].input-validation-error {
+    border: 0 none;
+}
+
+.validation-summary-errors {
+    color: #b94a48;
+}
+
+.validation-summary-valid {
+    display: none;
+}
+
+
+/* hien thi vien khi validation error cho dropdownlist */
+select.input-validation-error {
+    border: 1px solid #b94a48;
+}
+
+
+
+/* Phan style cho menu */
+#topnavbar {
+    margin: 0;
+}
+
+    #topnavbar.affix {
+        position: fixed;
+        top: 0;
+        width: 100%;
+    }
+
+#banner {
+    background-color: #5b99a8;
+    /*background-color: #32aef4;*/
+    margin: 0 auto;
+}
+
+.logo-wrap {
+    padding: 0;
+    /*background: url("../fonts/bg-head-top.png") no-repeat scroll left top;*/
+    background: url("../fonts/vnfish-bg.png") no-repeat scroll left top;
+}
+
+/* Loai bo khoang trong cua body, dua banner len tren sat voi thanh address bar*/
+body {
+    border: 0 none;
+    margin: 0;
+    padding: 0;
+    vertical-align: baseline;
+}
+/* ----------------*/
+
+/* Phan cho sub-menu */
+.dropdown-submenu {
+    position: relative;
+}
+
+    .dropdown-submenu > .dropdown-menu {
+        top: 0;
+        left: 100%;
+        margin-top: -6px;
+        margin-left: -1px;
+        -webkit-border-radius: 0 6px 6px 6px;
+        -moz-border-radius: 0 6px 6px;
+        border-radius: 0 6px 6px 6px;
+    }
+
+    .dropdown-submenu:hover > .dropdown-menu {
+        display: block;
+    }
+
+    .dropdown-submenu > a:after {
+        display: block;
+        content: " ";
+        float: right;
+        width: 0;
+        height: 0;
+        border-color: transparent;
+        border-style: solid;
+        border-width: 5px 0 5px 5px;
+        border-left-color: #ccc;
+        margin-top: 5px;
+        margin-right: -10px;
+    }
+
+    .dropdown-submenu:hover > a:after {
+        border-left-color: #fff;
+    }
+
+    .dropdown-submenu.pull-left {
+        float: none;
+    }
+
+        .dropdown-submenu.pull-left > .dropdown-menu {
+            left: -100%;
+            margin-left: 10px;
+            -webkit-border-radius: 6px 0 6px 6px;
+            -moz-border-radius: 6px 0 6px 6px;
+            border-radius: 6px 0 6px 6px;
+        }
+
+
+/* moi them vao 28/07/2015 */
+
+
+/* mau tren menu link */
+/* menu chinh */
+.navbar-default .navbar-nav > li > a {
+    color: white;
+}
+
+    /* chi danh cho nut Home */
+    .navbar-default .navbar-nav > li > a:hover,
+    .navbar-default .navbar-nav > li > a:focus {
+        color: #00FF00;
+        background-color: #32aef4;
+    }
+
+/* background-color menu chinh */
+.navbar-default .navbar-nav .dropdown > a:hover,
+.navbar-default .navbar-nav .dropdown > a:focus {
+    color: white;
+    background-color: #ec8415;
+}
+
+/* menu con */
+.navbar-default .navbar-nav .dropdown-menu > li > a:hover,
+.navbar-default .navbar-nav .dropdown-menu > li > a:focus {
+    /*background-color: #b94a48;*/
+    background-color: #ec8415;
+    background-image: none; /* remove background image which bootstrap define default */
+    color: white;
+}
+
+
+/* can giua cho pagination */
+.pagination-container {
+    text-align: left;
+}
+
+    .pagination-container .pagination {
+        margin: 0;
+    }
+
+
+/* thay doi mau khi hover row tren table */
+.table-hover > tbody > tr:hover > td
+/*,.table-hover > tbody > tr:hover > th             khong hover voi tieu de cua bang*/ {
+    background-color: #FFFFCC;
+}
+
+/* thay doi font-size cua table */
+.table {
+    font-size: 14px;
+}
+    /* doi mau background, mau border, mau text
+   cua row tieu de bang */
+    .table > tbody > tr:nth-child(odd) > th {
+        /* Style header cu~
+        background-color: #ebf3fa !important;
+    border-color: #8ba0bc;
+    color:#1e395b;
+        */
+        /* Style header Office2003Blue */
+        color: white;
+        cursor: pointer;
+        /*white-space: nowrap;*/
+        padding: 4px 6px 5px;
+        border: 1px solid #94b6e8;
+        /*background: #94b6e8 url('../fonts/DXR.gif') repeat-x center top;*/
+        background: #025e74;
+        overflow: hidden;
+        font-weight: bold;
+        text-align: left;
+        box-shadow: none !important;
+    }
+
+    /* doi mau border cua bang, can middle cho text trong td */
+    .table > tbody > tr > td {
+        /*border-color: #8ba0bc !important;*/
+        /* Style header Office2003Blue */
+        overflow: hidden;
+        border-bottom: 1px solid #bfd3ee !important;
+        border-right: 1px solid #bfd3ee !important;
+        border-left: 1px solid #bfd3ee !important;
+        border-top-width: 0;
+        border-left-width: 0;
+        padding: 2px 6px 5px;
+        vertical-align: middle;
+        box-shadow: none !important;
+    }
+
+
+/* dung de thay doi khoang cach giua cac row class trong Search Panel */
+.margin-top-03 {
+    margin-top: 0.3em;
+}
+
+.margin-top-05 {
+    margin-top: 0.5em;
+}
+
+.margin-top-10 {
+    margin-top: 1.0em;
+}
+
+.margin-top-15 {
+    margin-top: 1.5em;
+}
+
+.margin-top-20 {
+    margin-top: 2.0em;
+}
+
+.margin-top-25 {
+    margin-top: 2.5em;
+}
+
+.margin-top-30 {
+    margin-top: 3.0em;
+}
+
+
+/* giam do cao cua formcontrol trong Search Panel */
+.container .form-control {
+    height: 30px;
+    max-width: 260px; /* giảm độ rộng của form-control trong container    defaut 280px */
+    font-size: 12px;
+}
+
+/*.container .datepicker {
+    height:30px;
+    max-width:150px;
+    font-size:12px;
+}*/
+
+.navbar {
+    /*
+        khi hien thi modal dialog thi navbar luon hien thi o tren cua dialog
+        do do' phai chinh lai z-index cua navbar
+        
+        Thuộc tính z-index thiết lập thứ tự xếp chồng nhau của một thành phần vị trí.
+        Thứ tự chồng nhau được sắp xếp dựa theo giá trị số, thành phần HTML nào có chỉ số z-index cao hơn sẽ nằm trên, ngược lại sẽ nằm dưới, giá trị mặc định là 0.
+        Có thể sử dụng số âm.
+        Giá trị tốt nhất là không sử dụng đơn vị.
+        Chú ý: z-index chỉ làm việc cùng với thuộc tính position.
+    */
+    z-index: auto;
+}
+
+
+.fdb_textarea {
+    max-width: 570px;
+    height: 90px !important;
+}
+
+.fdb_textarea_iuu {
+    max-width: 100% !important;
+    height: 90px !important;
+}
+
+/*   reset font-size của bootstrap (toàn bộ trang) = 12px
+*/
+* {
+    font-size: 12px;
+    line-height: 1.428;
+}
+
+.fdb_form-inline {
+    display: inline;
+    max-width: 120px !important;
+}
+
+/* can giua cho table tren man hinh */
+.center-table {
+    margin: 0 auto !important;
+    float: none !important;
+}
+
+a.classnameedit {
+    background: url(../fonts/btn-details.png) no-repeat top left;
+    display: block;
+    width: 50px;
+    height: 50px;
+    text-indent: -9999px; /* hides the link text */
+}
+
+a.classnamedelete {
+    background: url(../fonts/btn-delete.png) no-repeat top left;
+    display: block;
+    width: 50px;
+    height: 50px;
+    text-indent: -9999px; /* hides the link text */
+}
+
+
+a.export-excel-btn {
+    background: url(../fonts/excel-icon.png) no-repeat top left;
+    display: block;
+    width: 50px;
+    height: 50px;
+    text-indent: -9999px; /* hides the link text */
+}
+
+/* TYPOGRAPHY and Content */
+/* style cho div chua content*/
+.fdb-div-content {
+    border: 1px solid #dddddd;
+    /*background: #f2f5f7 url("images/ui-bg_highlight-hard_100_f2f5f7_1x100.png") 50% top repeat-x;*/
+    color: #362b36;
+}
+
+.fdb-div-corner-all {
+    /*border-top-left-radius: 6px;
+    border-top-right-radius: 6px;*/
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+
+.fdb-title-search-form {
+    /*  Style 1
+    font-family:Georgia,serif;
+	color:#4E443C;
+	font-variant: small-caps; text-transform: none; font-weight: 100; margin-bottom: 0;
+        */
+    /* Style 2 */
+    font-family: times, Times New Roman, times-roman, georgia, serif;
+    /*color: #444;*/
+    color: #006bc1;
+    margin: 0;
+    padding: 6px;
+    /*font-size: 51px;
+	line-height: 44px;*/
+    letter-spacing: -2px;
+    font-weight: bold;
+    margin-top: 0.5em;
+    border-radius: 20px;
+    border: 1px solid #4444;
+}
+
+.fdb-hr {
+    margin-top: 0px;
+    margin-bottom: 10px;
+    border: 0;
+    border-top: 1px solid #eeeeee;
+}
+
+.fdb-text-display {
+    padding-top: 7px;
+}
+
+.fdb-panel-header-10 {
+    color: #fff; /* mau chu */
+    background-color: #428bca; /* mau nen */
+    border-color: #428bca;
+    border-top-left-radius: 4px; /* bo vien tron */
+    border-top-right-radius: 4px;
+    padding: 10px; /* do cao cua title */
+}
+
+.fdb-panel-header-15 {
+    color: #fff; /* mau chu */
+    background-color: #428bca; /* mau nen */
+    border-color: #428bca;
+    border-top-left-radius: 4px; /* bo vien tron */
+    border-top-right-radius: 4px;
+    padding: 15px; /* do cao cua title */
+}
+
+
+.fdb-panel-body-0 {
+    padding: 0px; /* cho body content khit vao gan border */
+}
+
+
+.fdb-title-form {
+    font-size: 18px;
+    color: #006bc1;
+}
+
+.fdb-title-form-24 {
+    padding: 15px;
+    font-size: 20px;
+    color: #006bc1;
+}
+
+.fdb-title-form-14 {
+    font-size: 14px;
+    color: #006bc1;
+}
+
+.fdb-text-background-color {
+    background-color: #FFFF66;
+    color: black;
+}
+
+
+/* wider than 768px fixed width */
+@media screen and (min-width: 768px) {
+
+    #myModal .modal-dialog {
+        width: 975px;
+    }
+}
+
+/*less than 768px the modal will fill the width which is then set to auto*/
+#myModal .modal-dialog {
+    width: 75%;
+}
+
+
+/* Căn phần copyright luôn ở cuối cùng của màn hình */
+html {
+    position: relative;
+    min-height: 100%;
+}
+
+body {
+    /* Margin bottom by footer height */
+    margin-bottom: 260px;
+}
+
+#footer {
+    position: absolute;
+    bottom: 0;
+    /* Set the fixed height of the footer here */
+    height: 40px;
+}
+
+.footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    /* Set the fixed height of the footer here */
+    height: 50px;
+    background-color: #f5f5f5;
+}
+
+
+
+.footer-distributed {
+    position: absolute;
+    bottom: 0;
+    /*background-color: #292c2f;*/
+    box-shadow: 0 1px 1px 0 rgba(0, 0, 0, 0.12);
+    box-sizing: border-box;
+    width: 98%;
+    text-align: left;
+    font: bold 16px sans-serif;
+    /*padding: 55px 50px;*/
+    margin: 15px;
+    padding: 20px 22px;
+    background-color: #FBFBFB;
+    border-top: 1px solid #e5e5e5;
+    height: 240px;
+}
+
+    .footer-distributed .footer-left,
+    .footer-distributed .footer-center,
+    .footer-distributed .footer-right {
+        display: inline-block;
+        vertical-align: top;
+    }
+
+    /* Footer left */
+
+    .footer-distributed .footer-left {
+        width: 40%;
+    }
+
+    /* The company logo */
+
+    .footer-distributed h3 {
+        font: normal 36px 'Cookie', cursive;
+        margin: 0;
+    }
+
+        .footer-distributed h3 span {
+            color: #5383d3;
+        }
+
+    /* Footer links */
+
+    .footer-distributed .footer-links {
+        margin: 20px 0 12px;
+        padding: 0;
+    }
+
+        .footer-distributed .footer-links a {
+            display: inline-block;
+            line-height: 1.8;
+            text-decoration: none;
+            color: inherit;
+        }
+
+    .footer-distributed .footer-company-name {
+        /*color:  #8f9296;*/
+        font-size: 14px;
+        font-weight: normal;
+        margin: 0;
+    }
+
+    /* Footer Center */
+
+    .footer-distributed .footer-center {
+        width: 35%;
+    }
+
+        .footer-distributed .footer-center i {
+            /*background-color:  #33383b;*/
+            font-size: 25px;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 42px;
+            margin: 10px 15px;
+            vertical-align: middle;
+        }
+
+            .footer-distributed .footer-center i.fa-envelope {
+                font-size: 17px;
+                line-height: 38px;
+            }
+
+        .footer-distributed .footer-center p {
+            display: inline-block;
+            vertical-align: middle;
+            margin: 0;
+        }
+
+            .footer-distributed .footer-center p span {
+                display: block;
+                font-weight: normal;
+                font-size: 14px;
+                line-height: 2;
+            }
+
+            .footer-distributed .footer-center p a {
+                color: #5383d3;
+                text-decoration: none;
+            }
+
+
+    /* Footer Right */
+
+    .footer-distributed .footer-right {
+        width: 20%;
+    }
+
+    .footer-distributed .footer-company-about {
+        line-height: 20px;
+        /*color:  #92999f;*/
+        font-size: 13px;
+        font-weight: normal;
+        margin: 0;
+    }
+
+        .footer-distributed .footer-company-about span {
+            display: block;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+    .footer-distributed .footer-icons {
+        margin-top: 25px;
+    }
+
+        .footer-distributed .footer-icons a {
+            display: inline-block;
+            width: 35px;
+            height: 35px;
+            cursor: pointer;
+            /*background-color:  #33383b;*/
+            border-radius: 2px;
+            font-size: 20px;
+            text-align: center;
+            line-height: 35px;
+            margin-right: 3px;
+            margin-bottom: 5px;
+        }
+
+
+    .footer-distributed .ftext {
+        font-size: 12px;
+        font-weight: normal;
+    }
+
+/* If you don't want the footer to be responsive, remove these media queries */
+
+@media (max-width: 880px) {
+
+    .footer-distributed {
+        font: bold 14px sans-serif;
+    }
+
+        .footer-distributed .footer-left,
+        .footer-distributed .footer-center,
+        .footer-distributed .footer-right {
+            display: block;
+            width: 100%;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+            .footer-distributed .footer-center i {
+                margin-left: 0;
+            }
+}
+
+.a-scroll-to {
+    position: fixed;
+    right: 8px;
+    bottom: 60px;
+    display: none;
+}
+
+    .a-scroll-to ul {
+        list-style: none;
+        padding: 0;
+        width: 56px;
+    }
+
+        .a-scroll-to ul li a {
+            float: left;
+            text-align: center;
+            width: 100%;
+            color: #333;
+            border: 1px solid #dfdfdf;
+            height: 40px;
+        }
+
+            .a-scroll-to ul li a span {
+                display: none;
+            }
+
+            .a-scroll-to ul li a.up {
+                padding-top: 8px;
+                border-top: none;
+                border-bottom: none;
+                display: none;
+                visibility: hidden;
+            }
+
+            .a-scroll-to ul li a.down {
+                padding-top: 8px;
+                display: none;
+                visibility: hidden;
+            }
+
+.a-scroll-to {
+    right: 49px;
+}
+
+    .a-scroll-to a.scroll-top.top {
+        width: 45px;
+        height: 44px;
+        border: none;
+        background-repeat: no-repeat;
+        background-image: url('/fonts/back_to_top.png');
+        text-indent: -9999px;
+    }
+
+        .a-scroll-to a.scroll-top.top:hover {
+            opacity: .8;
+            *filter: alpha(opacity=80);
+            -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=80)";
+        }
+
+        .a-scroll-to a.scroll-top.top i, .a-scroll-to a.scroll-top.top br {
+            display: none;
+        }
+
+
+
+.form-horizontal .control-label.text-left {
+    text-align: left;
+}
+
+
+.helpbox_visible {
+    padding: 5px;
+    font-size: 11px;
+    background-color: #F8F8F8;
+    line-height: 17px;
+    color: #587DB3;
+    border: #bcd8e6 1px solid;
+    background-color: aliceblue;
+}
+
+.block-content ul li {
+    list-style: none;
+    background: url(../fonts/li1.gif) no-repeat 0 9px;
+    display: block;
+    padding: 2px 0 2px 10px;
+}
+
+
+/* Tooltip inline */
+.help-tip {
+    position: absolute;
+    top: 3px;
+    right: 18px;
+    text-align: center;
+    background-color: #BCDBEA;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+    line-height: 26px;
+    cursor: default;
+}
+
+    .help-tip:before {
+        content: '?';
+        font-weight: bold;
+        color: #fff;
+    }
+
+    .help-tip:hover p {
+        display: block;
+        transform-origin: 100% 0%;
+        -webkit-animation: fadeIn 0.3s ease-in-out;
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    .help-tip p { /* The tooltip */
+        display: none;
+        text-align: left;
+        background-color: #587DB3;
+        padding: 10px;
+        width: 300px;
+        position: absolute;
+        border-radius: 3px;
+        box-shadow: 1px 1px 1px rgba(0, 0, 0, 0.2);
+        right: -4px;
+        color: #FFF;
+        font-size: 13px;
+        line-height: 1.4;
+        z-index: 9999;
+    }
+
+        .help-tip p:before { /* The pointer of the tooltip */
+            position: absolute;
+            content: '';
+            width: 0;
+            height: 0;
+            border: 6px solid transparent;
+            border-bottom-color: #587DB3;
+            /*right:10px;
+	top:-12px;*/
+            right: 10px;
+            /*left:5px;*/
+            top: -12px;
+        }
+
+        .help-tip p:after { /* Prevents the tooltip from being hidden */
+            width: 100%;
+            height: 40px;
+            content: '';
+            position: relative;
+            top: -40px;
+            left: 0;
+        }
+
+/* CSS animation */
+
+@-webkit-keyframes fadeIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.6);
+    }
+
+    100% {
+        opacity: 100%;
+        transform: scale(1);
+    }
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 100%;
+    }
+}
+
+/* end tooltip inline */
+.selectNhomNghe {
+    height: 30px;
+    /*max-width:260px;*/ /* giảm độ rộng của form-control trong container    defaut 280px */
+    width: 100%;
+    font-size: 12px;
+    display: block;
+    padding: 6px 12px;
+    /*font-size: 14px;*/
+    line-height: 1.428571429;
+    color: #555555;
+    vertical-align: middle;
+    background-color: #ffffff;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+    -webkit-transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
+    transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
+}
+
+
+.selectNhomNghe2 {
+    height: 30px;
+    /*max-width:260px;*/ /* giảm độ rộng của form-control trong container    defaut 280px */
+    width: 100%;
+    font-size: 12px;
+    display: block;
+    padding: 6px 12px;
+    /*font-size: 14px;*/
+    line-height: 1.428571429;
+    color: #555555;
+    vertical-align: middle;
+    background-color: #ffffff;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+    -webkit-transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
+    transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
+}
+
+.selectLoaiMatNuoc {
+    height: 30px;
+    /*max-width:260px;*/ /* giảm độ rộng của form-control trong container    defaut 280px */
+    width: 100%;
+    font-size: 12px;
+    display: block;
+    padding: 6px 12px;
+    /*font-size: 14px;*/
+    line-height: 1.428571429;
+    color: #555555;
+    vertical-align: middle;
+    background-color: #ffffff;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+    -webkit-transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
+    transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
+}
+
+
+
+
+
+
+/* style cho fieldset */
+fieldset.fdb-scheduler-border {
+    /*border: 1px solid #dddddd;*/
+    padding: 0 1.4em 1.4em 1.4em !important;
+    /*margin: 0 0 1.5em 0 !important;*/
+    -webkit-box-shadow: 0px 0px 0px 0px #000;
+    box-shadow: 0px 0px 0px 0px #000;
+}
+
+legend.fdb-scheduler-border {
+    font-size: 16px;
+    text-align: left !important;
+    /*width: auto;*/
+    /*padding: 0 10px;*/
+    /*border-bottom: none;*/
+    margin-bottom: 15px;
+    color: #006bc1;
+    font-style: italic;
+}
+
+
+legend.fdb-scheduler-search-border {
+    /*font-size: 16px;
+    text-align: left !important;
+    margin-bottom: 15px;    
+    font-style: italic;
+    font-weight:bold;
+    color: #006bc1;*/
+
+
+    color: #006bc1 !important;
+    font-size: 20px !important;
+    line-height: 18px !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+    text-align: left !important
+}
+
+
+pre {
+    font-size: 16px;
+    font-family:Arial,Tahoma;
+   /* text-align: left !important;*/
+    /*width: auto;*/
+    /*padding: 0 10px;*/
+    /*border-bottom: none;*/
+    margin-bottom: 15px;    
+    font-style: italic;
+    font-weight:bold;
+    color: #006bc1;
+}
+
+/*dung cho viec in an,view print*/
+@media print {
+    * {
+        color: red !important;
+        text-shadow: none !important;
+        background: transparent !important;
+        background-color: red !important;
+        box-shadow: none !important;
+        -webkit-columns: auto !important;
+        -webkit-column-count: 4;
+        -moz-column-count: 4;
+        column-count: 4;
+        -webkit-column-gap: .5em;
+        -moz-column-gap: .5em;
+        padding-bottom: 2px;
+    }
+
+    a,
+    a:visited {
+        text-decoration: underline;
+    }
+
+        a[href]:after {
+            content: " (" attr(href) ")";
+        }
+
+    abbr[title]:after {
+        content: " (" attr(title) ")";
+    }
+
+    .ir a:after,
+    a[href^="javascript:"]:after,
+    a[href^="#"]:after {
+        content: "";
+    }
+
+    pre,
+    blockquote {
+        border: 1px solid #999;
+        page-break-inside: avoid;
+    }
+
+    thead {
+        display: table-header-group;
+    }
+    /*tr,
+  img {
+    page-break-inside: avoid;
+  }*/
+    img {
+        max-width: 100% !important;
+    }
+    /*@page  {
+    margin: 2cm .5cm;
+  }*/
+    p,
+    h2,
+    h3 {
+        orphans: 3;
+        widows: 3;
+    }
+
+    h2,
+    h3 {
+        page-break-after: avoid;
+    }
+
+    .navbar {
+        display: none;
+    }
+
+    .table td,
+    .table th {
+        background-color: #fff !important;
+    }
+
+    .btn > .caret,
+    .dropup > .btn > .caret {
+        border-top-color: #000 !important;
+    }
+
+    .label {
+        border: 1px solid #000;
+    }
+
+    .table {
+        border-collapse: collapse !important;
+    }
+
+    .table-bordered th,
+    .table-bordered td {
+        border: 1px solid #ddd !important;
+    }
+
+    .col-md-4 {
+        margin-left: 0px;
+        padding-top: 0px;
+        display: inline-block;
+        width: 100%;
+    }
+
+    .col-md-2 {
+        margin-left: 0px;
+        padding-top: 0px;
+        display: inline-block;
+        width: 100%;
+    }
+
+    .row {
+        display: inline-block !important;
+        break-inside: avoid;
+        page-break-inside: avoid;
+        -webkit-column-count: 4 !important;
+        -moz-column-count: 4 !important;
+        column-count: 4 !important;
+        -webkit-column-gap: .20em;
+        -moz-column-gap: .20em;
+        padding-bottom: 2px;
+        font-size: 18px;
+        line-height: 21px;
+    }
+
+
+    .iuu_table > tbody > tr > td {
+        /*border-color: #8ba0bc !important;*/
+        /* Style header Office2003Blue */
+        overflow: hidden;
+        border-bottom: 1px solid !important;
+        border-right: 1px solid !important;
+        border-left: 1px solid !important;
+        border-top-width: 0;
+        border-left-width: 0;
+        padding: 2px 6px 5px;
+        vertical-align: middle;
+    }
+
+    .iuu_td_align {
+        vertical-align: top !important;
+    }

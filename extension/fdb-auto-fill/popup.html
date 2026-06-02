@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FDB Auto Fill Settings</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section class="hero">
+      <div class="eyebrow">Cấu hình riêng tư</div>
+      <h1>API Backend</h1>
+      <p>Lưu URL backend và API key cục bộ trong trình duyệt. Luồng tìm kiếm và kiểm tra chạy ngay trên trang FDB.</p>
+    </section>
+
+    <section class="card">
+      <label class="field">
+        <span>Backend URL</span>
+        <input id="apiBaseUrl" type="url" placeholder="http://localhost:8000/api">
+      </label>
+
+      <label class="field">
+        <span>API Key</span>
+        <input id="apiKey" type="password" placeholder="Nhập API key">
+      </label>
+
+      <div class="hint">
+        Không hiển thị key trên giao diện trang. Chỉ lưu trong `chrome.storage.local`.
+      </div>
+
+      <div class="button-row" style="margin-bottom: 10px;">
+        <button id="saveSettings" class="primary-btn">Lưu cấu hình</button>
+        <button id="applyToTab" class="secondary-btn" type="button">Gắn vào tab</button>
+      </div>
+      <div id="status" class="status">Sẵn sàng.</div>
+    </section>
+  </main>
+
+  <script src="popup.js"></script>
+</body>
+</html>

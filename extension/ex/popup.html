@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Quiz Deadline Checker</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+
+<body>
+  <h2>🔐 Nhập Cookie</h2>
+<textarea id="cookie" rows="4" placeholder="Dán cookie của bạn ở đây..."></textarea>
+
+<h2>📚 Danh sách môn học</h2>
+<input type="text" id="urlInput" placeholder="Nhập ID môn học (ví dụ: 768080)" />
+<button id="addCourse">➕ Thêm môn</button>
+<button id="clearCourses" style="background: #e74c3c;">🗑️ Xóa tất cả môn</button>
+
+<ul id="courseList"></ul>
+
+<button id="checkDeadlines">🕒 Lấy Deadline</button>
+<button id="exportZip">📦 Xuất kết quả ra file ZIP</button>
+
+  <div id="result" class="result"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,314 @@
+﻿var curVal;
+
+$.validator.addMethod("min", function (value, element, params) {
+    // them doan nay thi ajax moi co tac dung => "this.optional(element) ||"
+    // all this.optional does is say "if the field is optional, return true if it is blank"
+    //return this.optional(element) || (parseInt(value) < parseInt($(params).val()));
+
+    // value : gia tri nhap vao
+    // params. : gia tri cua bien truyen vao attribute
+    return this.optional(element) || (parseInt(value) >= parseInt(curVal));
+});
+
+$.validator.unobtrusive.adapters.add("min", ["minvalue"], function (options) {
+    // lay gia tri hien thoi
+    curVal = options.params.minvalue;
+
+    var params = {
+        minvalue: options.params.minvalue
+    };
+    options.rules['min'] = params;
+    options.messages['min'] = options.message;
+
+
+    // cai nay dung de lay gia tri property so sanh thuoc tinh
+    //options.rules["min"] = "#" + options.params.minvalue;
+    //options.messages["min"] = options.message;
+});
+
+
+// anhnt196
+
+$.validator.addMethod("datetimeisnull", function (value, element, params) {
+
+    var ngayCapATKT = $(params).val();
+    if (value != null && value != "" && value != "dd/mm/yyyy") {
+        if (ngayCapATKT == null || ngayCapATKT == "" || ngayCapATKT == "dd/mm/yyyy")
+            return false;
+    }
+    return true;
+});
+
+$.validator.unobtrusive.adapters.add("datetimeisnull", ["otherpropertyname"], function (options) {
+    options.rules["datetimeisnull"] = "#" + options.params.otherpropertyname;
+    options.messages["datetimeisnull"] = options.message;
+});
+
+
+$.validator.addMethod("requiredddmmyyyy", function (value, element, params) {
+    if (value != null && value != "" && value != "dd/mm/yyyy") {
+        //return this.optional(element) || /^(0[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2])\/(19|20)\d{2}$/.test(value);
+        var check = this.optional(element) || /(^(((0[1-9]|1[0-9]|2[0-8])[\/](0[1-9]|1[012]))|((29|30|31)[\/](0[13578]|1[02]))|((29|30)[\/](0[4,6,9]|11)))[\/](19|[2-9][0-9])\d\d$)|(^29[\/]02[\/](19|[2-9][0-9])(00|04|08|12|16|20|24|28|32|36|40|44|48|52|56|60|64|68|72|76|80|84|88|92|96)$)/.test(value);
+        //if (check == false)
+        //    $(params).val("");
+        return check;
+    }
+    return true;
+});
+
+$.validator.unobtrusive.adapters.add("requiredddmmyyyy", ["otherpropertyname"], function (options) {
+    options.rules["requiredddmmyyyy"] = "#" + options.params.otherpropertyname;
+    options.messages["requiredddmmyyyy"] = options.message;
+});
+
+
+$.validator.addMethod('equaldatenow', function (value, element, params) {
+    var currentDate = new Date();
+
+    var datearray = value.split("/");
+
+    var newdate = datearray[1] + '/' + datearray[0] + '/' + datearray[2];
+
+    var date = new Date(newdate);
+    if (Date.parse(date) > currentDate) {
+        return false;
+    }
+    return true;
+}, '');
+
+$.validator.unobtrusive.adapters.add('equaldatenow', function (options) {
+    options.rules['equaldatenow'] = {};
+    options.messages['equaldatenow'] = options.message;
+});
+
+$.validator.addMethod('equalbiggerdatenow', function (value, element, params) {
+    var currentDate = new Date();
+
+    var datearray = value.split("/");
+
+    var newdate = datearray[1] + '/' + datearray[0] + '/' + datearray[2];
+
+    var date = new Date(newdate);
+    if (Date.parse(date) < currentDate) {
+        return false;
+    }
+    return true;
+}, '');
+
+$.validator.unobtrusive.adapters.add('equalbiggerdatenow', function (options) {
+    options.rules['equaldatenow'] = {};
+    options.messages['equaldatenow'] = options.message;
+});
+
+// end anhnt196
+
+// DATE GREATER THAN
+// Value is the element to be validated, params is the array of name/value pairs of the parameters extracted from the HTML, element is the HTML element that the validator is attached to
+$.validator.addMethod("dategreaterthan", function (value, element, params) {
+    // mac dinh Date.parse se dinh dang ngay thang theo RFC2822 or ISO 8601 date
+    // -> phai dung moment.js de convert date
+    if (value != null && value != "" && value != "dd/mm/yyyy") {
+        if ($(params).val() != null && $(params).val() != "" && $(params).val() != "dd/mm/yyyy") {
+            return this.optional(element) || moment(value, 'DD/MM/YYYY') > moment($(params).val(), 'DD/MM/YYYY');
+        }
+    }
+    return true;
+
+});
+
+$.validator.unobtrusive.adapters.add("dategreaterthan", ["otherpropertyname"], function (options) {
+    options.rules["dategreaterthan"] = "#" + options.params.otherpropertyname;
+    options.messages["dategreaterthan"] = options.message;
+});
+
+// DATE GREATER THAN OR EQUAL TO
+// Value is the element to be validated, params is the array of name/value pairs of the parameters extracted from the HTML, element is the HTML element that the validator is attached to
+$.validator.addMethod("dategreaterthanorequalto", function (value, element, params) {
+    // mac dinh Date.parse se dinh dang ngay thang theo RFC2822 or ISO 8601 date
+    // -> phai dung moment.js de convert date
+
+    if (value != null && value != "" && value != "dd/mm/yyyy") {
+        if ($(params).val() != null && $(params).val() != "" && $(params).val() != "dd/mm/yyyy") {
+            return this.optional(element) || moment(value, 'DD/MM/YYYY') >= moment($(params).val(), 'DD/MM/YYYY');
+        }
+    }
+    return true;
+});
+
+$.validator.unobtrusive.adapters.add("dategreaterthanorequalto", ["otherpropertyname"], function (options) {
+    options.rules["dategreaterthanorequalto"] = "#" + options.params.otherpropertyname;
+    options.messages["dategreaterthanorequalto"] = options.message;
+});
+
+
+// DATE LESS THAN OR EQUAL TO
+// Value is the element to be validated, params is the array of name/value pairs of the parameters extracted from the HTML, element is the HTML element that the validator is attached to
+$.validator.addMethod("datelessthanorequalto", function (value, element, params) {
+    // mac dinh Date.parse se dinh dang ngay thang theo RFC2822 or ISO 8601 date
+    // -> phai dung moment.js de convert date
+    if (value != null && value != "" && value != "dd/mm/yyyy") {
+        if ($(params).val() != null && $(params).val() != "" && $(params).val() != "dd/mm/yyyy") {
+            return this.optional(element) || moment(value, 'DD/MM/YYYY') <= moment($(params).val(), 'DD/MM/YYYY');
+        }
+    }
+    return true;
+});
+
+$.validator.unobtrusive.adapters.add("datelessthanorequalto", ["otherpropertyname"], function (options) {
+    options.rules["datelessthanorequalto"] = "#" + options.params.otherpropertyname;
+    options.messages["datelessthanorequalto"] = options.message;
+});
+
+
+// 11/04/2018: TruyBN updated
+// FDB_RequiredIfAttribute
+$.validator.addMethod("requiredif", function (value, element, parameters) {
+
+    var desiredvalue = parameters.desiredvalue;
+    desiredvalue = (desiredvalue == null ? '' : desiredvalue).toString();
+    var controlType = $("input[id$='" + parameters.dependentproperty + "']").attr("type");
+    var actualvalue = {}
+    if (controlType == "checkbox" || controlType == "radio") {
+        var control = $("input[id$='" + parameters.dependentproperty + "']:checked");
+        actualvalue = control.val();
+    } else {
+        actualvalue = $("#" + parameters.dependentproperty).val();
+    }
+    if ($.trim(desiredvalue).toLowerCase() === $.trim(actualvalue).toLocaleLowerCase()) {
+        var isValid = $.validator.methods.required.call(this, value, element, parameters);
+        return isValid;
+    }
+    return true;
+});
+
+$.validator.unobtrusive.adapters.add("requiredif", ['dependentproperty', 'desiredvalue'], function (options) {
+    options.rules['requiredif'] = options.params;
+    options.messages['requiredif'] = options.message;
+});
+
+
+//anhnt196 05.12.2018
+
+// DATE GREATER THAN IS NOT NULL
+// Value is the element to be validated, params is the array of name/value pairs of the parameters extracted from the HTML, element is the HTML element that the validator is attached to
+$.validator.addMethod("dategreaterthanisnotnull", function (value, element, params) {
+    // mac dinh Date.parse se dinh dang ngay thang theo RFC2822 or ISO 8601 date
+    // -> phai dung moment.js de convert date
+    if (value != null && value != "" && value != "dd/mm/yyyy") {
+        if ($(params).val() != null && $(params).val() != "" && $(params).val() != "dd/mm/yyyy") {
+            return this.optional(element) || moment(value, 'DD/MM/YYYY') > moment($(params).val(), 'DD/MM/YYYY');
+        }
+    }
+    return true;
+});
+
+$.validator.unobtrusive.adapters.add("dategreaterthanisnotnull", ["otherpropertyname"], function (options) {
+    options.rules["dategreaterthanisnotnull"] = "#" + options.params.otherpropertyname;
+    options.messages["dategreaterthanisnotnull"] = options.message;
+});
+
+//anhnt196 05.12.2018
+// DATE IS NOT NULL REQUIRED DATE
+// Value is the element to be validated, params is the array of name/value pairs of the parameters extracted from the HTML, element is the HTML element that the validator is attached to
+$.validator.addMethod("dateisnotnullrequireddate", function (value, element, params) {
+    var ngayCapATKT = $(params).val();
+    if (ngayCapATKT != null && ngayCapATKT != "" && ngayCapATKT != "dd/mm/yyyy") {
+        if (value == null || value == "" || value == "dd/mm/yyyy") {
+            return false;
+        }
+    }
+    return true;
+});
+
+$.validator.unobtrusive.adapters.add("dateisnotnullrequireddate", ["otherpropertyname"], function (options) {
+    options.rules["dateisnotnullrequireddate"] = "#" + options.params.otherpropertyname;
+    options.messages["dateisnotnullrequireddate"] = options.message;
+});
+
+//anhnt196 07.12.2018
+// VALIDATE PRICE TYPE DECIMAL
+// Value is the element to be validated, params is the array of name/value pairs of the parameters extracted from the HTML, element is the HTML element that the validator is attached to
+$.validator.addMethod("validatepricetypedecimal", function (value, element, params) {
+    var gia = $(params).val();
+    if ((parseInt(gia) < 0 || parseInt(gia) > parseInt(999999999999999999))) { return false; }
+    return true;
+});
+
+$.validator.unobtrusive.adapters.add("validatepricetypedecimal", ["otherpropertyname"], function (options) {
+    options.rules["validatepricetypedecimal"] = "#" + options.params.otherpropertyname;
+    options.messages["validatepricetypedecimal"] = options.message;
+});
+
+
+
+//anhnt196 27.12.2018
+// VALIDATE DECIMAL IS NOT Negative
+// Value is the element to be validated, params is the array of name/value pairs of the parameters extracted from the HTML, element is the HTML element that the validator is attached to
+$.validator.addMethod("validatedecimalnotnegative", function (value, element, params) {
+
+    var regex = /^\s*(?=.*[0-9])\d*(?:\.\d{1,2})?\s*$/;
+    var gia = $(params).val();
+    if (regex.test(gia)) {
+        return true;
+    }
+    else {
+        return false;
+    }
+    
+    return true;
+});
+
+$.validator.unobtrusive.adapters.add("validatedecimalnotnegative", ["otherpropertyname"], function (options) {
+    options.rules["validatedecimalnotnegative"] = "#" + options.params.otherpropertyname;
+    options.messages["validatedecimalnotnegative"] = options.message;
+});
+
+
+//anhnt196 15.01.2019
+// DECIMAL IS null not check validate 
+// Value is the element to be validated, params is the array of name/value pairs of the parameters extracted from the HTML, element is the HTML element that the validator is attached to
+$.validator.addMethod("validatedecimalisnull", function (value, element, params) {
+
+    var regex = /^\s*(?=.*[0-9])\d*(?:\.\d{1,2})?\s*$/;
+    var gia = $(params).val();
+
+    if (typeof gia == null || gia == '') {
+        return true;
+    }
+    else {
+        if (regex.test(gia)) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    return true;
+});
+
+$.validator.unobtrusive.adapters.add("validatedecimalisnull", ["otherpropertyname"], function (options) {
+    options.rules["validatedecimalisnull"] = "#" + options.params.otherpropertyname;
+    options.messages["validatedecimalisnull"] = options.message;
+});
+
+// Change default message error JAVASCRIPT Anhnt196 07.12.2018
+jQuery.extend(jQuery.validator.messages, {
+    required: "This field is required.",
+    remote: "Please fix this field.",
+    email: "Please enter a valid email address.",
+    url: "Please enter a valid URL.",
+    date: "Please enter a valid date.",
+    dateISO: "Please enter a valid date (ISO).",
+    number: "Please enter a valid number.",
+    digits: "Please enter only digits.",
+    creditcard: "Please enter a valid credit card number.",
+    equalTo: "Please enter the same value again.",
+    accept: "Please enter a value with a valid extension.",
+    maxlength: jQuery.validator.format("Không được vượt quá {0} ký tự."),
+    minlength: jQuery.validator.format("Please enter at least {0} characters."),
+    rangelength: jQuery.validator.format("Please enter a value between {0} and {1} characters long."),
+    range: jQuery.validator.format("Please enter a value between {0} and {1}."),
+    max: jQuery.validator.format("Please enter a value less than or equal to {0}."),
+    min: jQuery.validator.format("Please enter a value greater than or equal to {0}.")
+});
