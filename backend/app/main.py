@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .routers.report import router as report_router
+from .routers.vessels import router as vessel_router
 
 app = FastAPI(
     title="Fishing Vessel Report API",
@@ -23,6 +24,7 @@ app.add_middleware(
 
 # -- Routers ------------------------------------------------------------------
 app.include_router(report_router, prefix="/api")
+app.include_router(vessel_router, prefix="/api")
 
 # -- Direct API alias for generate-report to match API.md specification -------
 from fastapi import UploadFile, File, Form, Depends
@@ -39,7 +41,6 @@ async def generate_report_direct(
     db: Session = Depends(get_db)
 ):
     return await generate_report(files=files, quarter=quarter, year=year, provinces=provinces, db=db)
-
 
 
 # -- Root endpoints -----------------------------------------------------------

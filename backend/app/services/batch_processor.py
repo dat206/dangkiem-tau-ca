@@ -3,9 +3,11 @@ import concurrent.futures
 from pathlib import Path
 from typing import List, Dict, Any
 from sqlalchemy.orm import Session
+from sqlalchemy import and_
+
 from app.services.docx_parser import parse_vessel_docx
 from app.models.vessel import VesselORM
-from app.services.data_processor import classify_length_group, get_province_name
+from app.services.data_processor import classify_length_group
 
 def process_single_file(file_path: Path) -> Dict[str, Any]:
     """Xử lý đơn lẻ từng file để phục vụ cho luồng chạy song song."""
@@ -18,18 +20,9 @@ def process_single_file(file_path: Path) -> Dict[str, Any]:
         return result
     except Exception as e:
         return {
-            'so_dang_ky': '', 
-            'ma_tinh': '', 
-            'lmax': 0.0, 
-            'hinh_thuc_kiem_tra': 'Không xác định', 
-            'cap_tau': 'Không xác định',
-            'ho_ten': '',
-            'dia_chi': '',
-            'may_chinh': 0.0,
-            'vat_lieu': '',
-            'han_dk': '',
-            'nghe': '',
-            'ngay_cap': '',
+            'registration_no': None,
+            'province_code': 'UNK',
+            'lmax': 0.0,
             'file_name': file_path.name,
             'status': 'Lỗi',
             'error_msg': str(e)
@@ -51,27 +44,38 @@ def run_batch_processor_api(file_paths: List[Path], db: Session, max_threads: in
             
             if file_data['status'] == 'Thành công':
                 try:
-                    existing_vessel = db.query(VesselORM).filter(
-                        VesselORM.registration_number == file_data['so_dang_ky']
-                    ).first()
+                    reg_no = file_data.get('registration_no')
+                    ins_date = file_data.get('inspection_date')
                     
-                    lmax_val = file_data['lmax']
+                    # Upsert logic based on UNIQUE(registration_no, inspection_date)
+                    existing_vessel = None
+                    if reg_no and ins_date:
+                        existing_vessel = db.query(VesselORM).filter(
+                            and_(
+                                VesselORM.registration_no == reg_no,
+                                VesselORM.inspection_date == ins_date
+                            )
+                        ).first()
+                    
+                    lmax_val = file_data.get('lmax', 0.0)
                     len_group = classify_length_group(lmax_val)
-                    prov_name = get_province_name(file_data['ma_tinh'])
                     
                     vessel_attrs = {
-                        "owner_name": file_data.get("ho_ten", ""),
-                        "address": file_data.get("dia_chi", ""),
-                        "province_code": file_data.get("ma_tinh", ""),
-                        "province_name": prov_name,
+                        "owner_name": file_data.get("owner_name", ""),
+                        "address": file_data.get("address", ""),
+                        "address_short": file_data.get("address_short", ""),
+                        "province_code": file_data.get("province_code", ""),
                         "lmax": lmax_val,
-                        "power_kw": file_data.get("may_chinh", 0.0),
-                        "material": file_data.get("vat_lieu", ""),
-                        "inspection_type": file_data.get("hinh_thuc_kiem_tra", ""),
+                        "power_kw": file_data.get("power_kw", 0.0),
+                        "material": file_data.get("material", "Không xác định"),
+                        "inspection_type": file_data.get("inspection_type", "khong_xac_dinh"),
                         "length_group": len_group,
-                        "valid_until": file_data.get("han_dk", ""),
-                        "issued_date": file_data.get("ngay_cap", ""),
-                        "fishing_gear": file_data.get("nghe", ""),
+                        "vessel_class": file_data.get("vessel_class", "khong_xac_dinh"),
+                        "inspection_date": ins_date,
+                        "valid_until": file_data.get("valid_until"),
+                        "issued_date": file_data.get("issued_date"),
+                        "fishing_gear": file_data.get("fishing_gear", ""),
+                        "source_filename": file_data.get("source_filename", file_data['file_name']),
                     }
                     
                     if existing_vessel:
@@ -79,7 +83,7 @@ def run_batch_processor_api(file_paths: List[Path], db: Session, max_threads: in
                             setattr(existing_vessel, k, v)
                     else:
                         new_vessel = VesselORM(
-                            registration_number=file_data['so_dang_ky'],
+                            registration_no=reg_no,
                             **vessel_attrs
                         )
                         db.add(new_vessel)

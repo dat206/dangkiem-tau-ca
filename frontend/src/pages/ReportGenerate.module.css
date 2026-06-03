@@ -1,0 +1,260 @@
+.generatePage {
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.section {
+  background-color: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 8px;
+}
+
+.quarterSelector {
+  display: flex;
+  gap: 8px;
+  background-color: var(--surface-hover);
+  padding: 4px;
+  border-radius: var(--radius-full);
+}
+
+.quarterBtn {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: var(--radius-full);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+  transition: var(--transition);
+}
+
+.quarterBtnActive {
+  background-color: var(--primary);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.quarterBtn:hover:not(.quarterBtnActive) {
+  color: var(--text-main);
+}
+
+.yearInput {
+  width: 120px;
+  margin-top: 16px;
+}
+
+.infoBox {
+  background-color: var(--info-bg);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+}
+
+.infoIcon {
+  color: var(--info-text);
+  flex-shrink: 0;
+}
+
+.infoContent {
+  font-size: 14px;
+  color: var(--info-text);
+  line-height: 1.5;
+}
+
+.warningBox {
+  background-color: var(--warning-bg);
+  color: var(--warning-text);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.provinceGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.provinceCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.provinceCheckbox:hover {
+  background-color: var(--surface-hover);
+}
+
+.provinceCheckbox.checked {
+  background-color: rgba(11, 61, 107, 0.05);
+  border-color: var(--primary);
+}
+
+.checkboxInput {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.provinceLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-main);
+  flex: 1;
+}
+
+.provinceCount {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background-color: var(--surface-hover);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.checked .provinceCount {
+  background-color: var(--primary);
+  color: white;
+}
+
+.selectionActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.selectLink {
+  color: var(--primary);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.selectLink:hover {
+  text-decoration: underline;
+}
+
+.formatCards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.formatCard {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.formatCard.checked {
+  border-color: var(--primary);
+  background-color: rgba(11, 61, 107, 0.05);
+}
+
+.formatIcon {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.formatInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.formatTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.formatDesc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.submitArea {
+  margin-top: 16px;
+}
+
+.successBanner {
+  background-color: var(--success-bg);
+  border: 1px solid #a7f3d0;
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.successIcon {
+  color: var(--success);
+  width: 48px;
+  height: 48px;
+}
+
+.successTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--success-text);
+}
+
+.successDesc {
+  font-size: 14px;
+  color: var(--success-text);
+}
+
+.downloadActions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.downloadActions button {
+  flex: 1;
+}
+
+@media (max-width: 640px) {
+  .provinceGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .formatCards {
+    grid-template-columns: 1fr;
+  }
+  .downloadActions {
+    flex-direction: column;
+  }
+}

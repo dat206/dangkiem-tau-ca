@@ -1,0 +1,131 @@
+.loginPage {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--background);
+  padding: 24px;
+}
+
+.loginCard {
+  width: 100%;
+  max-width: 900px;
+  background-color: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.brandPanel {
+  flex: 1;
+  background-color: var(--primary);
+  color: white;
+  padding: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.waveSvg {
+  width: 160px;
+  height: auto;
+  margin-bottom: 32px;
+  opacity: 0.9;
+}
+
+.brandTitle {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.brandSubtitle {
+  font-size: 14px;
+  color: #bae6fd;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.formPanel {
+  flex: 1;
+  padding: 48px;
+  display: flex;
+  flex-direction: column;
+}
+
+.formTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 8px;
+}
+
+.formSubtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 32px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.checkboxWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: -8px;
+}
+
+.checkboxWrapper input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.checkboxWrapper label {
+  font-size: 14px;
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.errorAlert {
+  background-color: var(--error-bg);
+  color: var(--error-text);
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.footer {
+  margin-top: auto;
+  padding-top: 32px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-light);
+}
+
+@media (max-width: 768px) {
+  .loginCard {
+    flex-direction: column;
+    max-width: 480px;
+  }
+  .brandPanel {
+    padding: 32px;
+  }
+  .waveSvg {
+    width: 100px;
+    margin-bottom: 16px;
+  }
+}
