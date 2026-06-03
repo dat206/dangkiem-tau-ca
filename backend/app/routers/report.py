@@ -1,4 +1,4 @@
-
+﻿
 import tempfile
 import zipfile
 from datetime import date, datetime, timedelta
@@ -20,26 +20,26 @@ router = APIRouter(
 )
 
 COASTAL_PROVINCES = [
-    {"code": "QN", "name": "Quảng Ninh"},
-    {"code": "HP", "name": "Hải Phòng"},
-    {"code": "TB", "name": "Thái Bình"},
-    {"code": "ND", "name": "Nam Định"},
-    {"code": "TH", "name": "Thanh Hóa"},
-    {"code": "NA", "name": "Nghệ An"},
-    {"code": "HT", "name": "Hà Tĩnh"},
-    {"code": "QB", "name": "Quảng Bình"},
-    {"code": "QT", "name": "Quảng Trị"},
-    {"code": "DN", "name": "Đà Nẵng"},
-    {"code": "QNG", "name": "Quảng Ngãi"},
-    {"code": "BDI", "name": "Bình Định"},
-    {"code": "KH", "name": "Khánh Hòa"},
-    {"code": "NT", "name": "Ninh Thuận"},
-    {"code": "BT", "name": "Bình Thuận"},
+    {"code": "QN", "name": "Quáº£ng Ninh"},
+    {"code": "HP", "name": "Háº£i PhÃ²ng"},
+    {"code": "TB", "name": "ThÃ¡i BÃ¬nh"},
+    {"code": "ND", "name": "Nam Äá»‹nh"},
+    {"code": "TH", "name": "Thanh HÃ³a"},
+    {"code": "NA", "name": "Nghá»‡ An"},
+    {"code": "HT", "name": "HÃ  TÄ©nh"},
+    {"code": "QB", "name": "Quáº£ng BÃ¬nh"},
+    {"code": "QT", "name": "Quáº£ng Trá»‹"},
+    {"code": "DN", "name": "ÄÃ  Náºµng"},
+    {"code": "QNG", "name": "Quáº£ng NgÃ£i"},
+    {"code": "BDI", "name": "BÃ¬nh Äá»‹nh"},
+    {"code": "KH", "name": "KhÃ¡nh HÃ²a"},
+    {"code": "NT", "name": "Ninh Thuáº­n"},
+    {"code": "BT", "name": "BÃ¬nh Thuáº­n"},
 ]
 
 FILE_TYPE_NAMES = {
-    "registry": "Bảng kê tổng hợp",
-    "summary": "Báo cáo quý theo tỉnh",
+    "registry": "Báº£ng kÃª tá»•ng há»£p",
+    "summary": "BÃ¡o cÃ¡o quÃ½ theo tá»‰nh",
 }
 
 
@@ -81,7 +81,7 @@ def _normalize_province_code(code: str | None) -> str:
     if not code:
         return ""
     normalized = code.strip().upper()
-    aliases = {"NĐ": "ND", "ĐN": "DN", "BĐ": "BDI", "QNI": "QNG"}
+    aliases = {"NÄ": "ND", "ÄN": "DN", "BÄ": "BDI", "QNI": "QNG"}
     return aliases.get(normalized, normalized)
 
 
@@ -127,8 +127,8 @@ def get_report_history(
     db: Session = Depends(get_db),
 ):
     """
-    Lấy danh sách lịch sử các lượt báo cáo trích xuất dữ liệu,
-    hỗ trợ lọc theo quý, năm và phân trang.
+    Láº¥y danh sÃ¡ch lá»‹ch sá»­ cÃ¡c lÆ°á»£t bÃ¡o cÃ¡o trÃ­ch xuáº¥t dá»¯ liá»‡u,
+    há»— trá»£ lá»c theo quÃ½, nÄƒm vÃ  phÃ¢n trang.
     """
     query = db.query(ReportHistoryORM)
     if quarter is not None:
@@ -137,7 +137,7 @@ def get_report_history(
         query = query.filter(ReportHistoryORM.year == year)
     if created_by:
         query = query.filter(ReportHistoryORM.created_by == created_by)
-    
+
     total = query.count()
     items = query.order_by(ReportHistoryORM.created_at.desc()).offset(skip).limit(limit).all()
     
@@ -165,25 +165,26 @@ def get_report_creators(db: Session = Depends(get_db)):
 @router.get("/history/{report_id}/download")
 def download_report_history(report_id: int, db: Session = Depends(get_db)):
     """
-    Tải tệp ZIP báo cáo đã được lưu trong lịch sử theo ID.
+    Táº£i tá»‡p ZIP bÃ¡o cÃ¡o Ä‘Ã£ Ä‘Æ°á»£c lÆ°u trong lá»‹ch sá»­ theo ID.
     """
     item = db.query(ReportHistoryORM).filter(ReportHistoryORM.id == report_id).first()
     if not item:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Không tìm thấy lịch sử báo cáo này."
+            detail="KhÃ´ng tÃ¬m tháº¥y lá»‹ch sá»­ bÃ¡o cÃ¡o nÃ y."
         )
     
     if not item.file_path or not Path(item.file_path).exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="File báo cáo không tồn tại trên server hoặc đã bị xóa."
+            detail="File bÃ¡o cÃ¡o khÃ´ng tá»“n táº¡i trÃªn server hoáº·c Ä‘Ã£ bá»‹ xÃ³a."
         )
     
+
     if item.created_at and datetime.utcnow() > item.created_at + timedelta(days=30):
         raise HTTPException(
             status_code=status.HTTP_410_GONE,
-            detail="File báo cáo đã quá hạn tải lại 30 ngày."
+            detail="File bÃ¡o cÃ¡o Ä‘Ã£ quÃ¡ háº¡n táº£i láº¡i 30 ngÃ y."
         )
 
     return FileResponse(
@@ -198,7 +199,7 @@ def delete_report_history(report_id: int, db: Session = Depends(get_db)):
     if not item:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Không tìm thấy lịch sử báo cáo này."
+            detail="KhÃ´ng tÃ¬m tháº¥y lá»‹ch sá»­ bÃ¡o cÃ¡o nÃ y."
         )
 
     if item.file_path:
@@ -213,7 +214,7 @@ def delete_report_history(report_id: int, db: Session = Depends(get_db)):
 
     db.delete(item)
     db.commit()
-    return {"message": "Đã xóa lịch sử báo cáo."}
+    return {"message": "ÄÃ£ xÃ³a lá»‹ch sá»­ bÃ¡o cÃ¡o."}
 
 
 @router.get("/export-options")
@@ -225,7 +226,7 @@ def get_export_options(
     if not (1 <= quarter <= 4):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Quý không hợp lệ: phải nằm trong khoảng từ 1 đến 4"
+            detail="QuÃ½ khÃ´ng há»£p lá»‡: pháº£i náº±m trong khoáº£ng tá»« 1 Ä‘áº¿n 4"
         )
 
     vessels = _query_period_vessels(db, quarter, year)
@@ -260,7 +261,7 @@ async def generate_report_from_db(
     if not (1 <= quarter <= 4):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Quý không hợp lệ: phải nằm trong khoảng từ 1 đến 4"
+            detail="QuÃ½ khÃ´ng há»£p lá»‡: pháº£i náº±m trong khoáº£ng tá»« 1 Ä‘áº¿n 4"
         )
 
     selected_provinces = {_normalize_province_code(code) for code in _split_csv(provinces)}
@@ -268,12 +269,12 @@ async def generate_report_from_db(
     if not selected_provinces:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Vui lòng chọn ít nhất một tỉnh để xuất báo cáo."
+            detail="Vui lÃ²ng chá»n Ã­t nháº¥t má»™t tá»‰nh Ä‘á»ƒ xuáº¥t bÃ¡o cÃ¡o."
         )
     if not selected_file_types:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Vui lòng chọn ít nhất một định dạng đầu ra."
+            detail="Vui lÃ²ng chá»n Ã­t nháº¥t má»™t Ä‘á»‹nh dáº¡ng Ä‘áº§u ra."
         )
 
     selected_vessels = [
@@ -283,7 +284,7 @@ async def generate_report_from_db(
     if not selected_vessels:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Không có bản ghi phù hợp với kỳ và tỉnh đã chọn."
+            detail="KhÃ´ng cÃ³ báº£n ghi phÃ¹ há»£p vá»›i ká»³ vÃ  tá»‰nh Ä‘Ã£ chá»n."
         )
 
     reports_dir = Path("saved_reports")
@@ -329,13 +330,13 @@ async def upload_vessel_documents(
     db: Session = Depends(get_db)
 ):
     """
-    API tiếp nhận nhiều file giấy chứng nhận (.docx) từ trình duyệt,
-    thực hiện gọi bộ xử lý đa luồng và phản hồi kết quả về Frontend.
+    API tiáº¿p nháº­n nhiá»u file giáº¥y chá»©ng nháº­n (.docx) tá»« trÃ¬nh duyá»‡t,
+    thá»±c hiá»‡n gá»i bá»™ xá»­ lÃ½ Ä‘a luá»“ng vÃ  pháº£n há»“i káº¿t quáº£ vá» Frontend.
     """
     if not files:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, 
-            detail="Không có file nào được chọn để tải lên."
+            detail="KhÃ´ng cÃ³ file nÃ o Ä‘Æ°á»£c chá»n Ä‘á»ƒ táº£i lÃªn."
         )
         
     saved_temp_paths = []
@@ -351,15 +352,15 @@ async def upload_vessel_documents(
         if not saved_temp_paths:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, 
-                detail="Không tìm thấy file Word định dạng .docx hợp lệ."
+                detail="KhÃ´ng tÃ¬m tháº¥y file Word Ä‘á»‹nh dáº¡ng .docx há»£p lá»‡."
             )
         
         from app.services.batch_processor import run_batch_processor_api
         processing_results = run_batch_processor_api(file_paths=saved_temp_paths, db=db, max_threads=4)
-        success_count = sum(1 for item in processing_results if item['status'] == 'Thành công')
+        success_count = sum(1 for item in processing_results if item['status'] == 'ThÃ nh cÃ´ng')
         
         return {
-            "message": f"Xử lý hoàn tất {len(processing_results)} file tài liệu.",
+            "message": f"Xá»­ lÃ½ hoÃ n táº¥t {len(processing_results)} file tÃ i liá»‡u.",
             "total": len(processing_results),
             "success": success_count,
             "failed": len(processing_results) - success_count,
@@ -368,7 +369,7 @@ async def upload_vessel_documents(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-            detail=f"Lỗi máy chủ: {str(e)}"
+            detail=f"Lá»—i mÃ¡y chá»§: {str(e)}"
         )
     finally:
         for path in saved_temp_paths:
@@ -385,19 +386,19 @@ async def generate_report(
     db: Session = Depends(get_db)
 ):
     """
-    Đồng thời trích xuất danh sách file DOCX, lưu vào Database,
-    tổng hợp số liệu theo quý và xuất ra file ZIP chứa 2 tệp báo cáo Excel.
-    Lịch sử xuất báo cáo cũng được lưu lại.
+    Äá»“ng thá»i trÃ­ch xuáº¥t danh sÃ¡ch file DOCX, lÆ°u vÃ o Database,
+    tá»•ng há»£p sá»‘ liá»‡u theo quÃ½ vÃ  xuáº¥t ra file ZIP chá»©a 2 tá»‡p bÃ¡o cÃ¡o Excel.
+    Lá»‹ch sá»­ xuáº¥t bÃ¡o cÃ¡o cÅ©ng Ä‘Æ°á»£c lÆ°u láº¡i.
     """
     if not (1 <= quarter <= 4):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Quý không hợp lệ: phải nằm trong khoảng từ 1 đến 4"
+            detail="QuÃ½ khÃ´ng há»£p lá»‡: pháº£i náº±m trong khoáº£ng tá»« 1 Ä‘áº¿n 4"
         )
         
     saved_temp_paths = []
     try:
-        # 1. Lưu các file upload tạm thời
+        # 1. LÆ°u cÃ¡c file upload táº¡m thá»i
         for file in files:
             if not file.filename.endswith('.docx'):
                 continue
@@ -409,21 +410,21 @@ async def generate_report(
         if not saved_temp_paths:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Không có file Word định dạng .docx hợp lệ nào được tải lên."
+                detail="KhÃ´ng cÃ³ file Word Ä‘á»‹nh dáº¡ng .docx há»£p lá»‡ nÃ o Ä‘Æ°á»£c táº£i lÃªn."
             )
             
-        # 2. Phân tích các file và lưu thông tin vào CSDL
+        # 2. PhÃ¢n tÃ­ch cÃ¡c file vÃ  lÆ°u thÃ´ng tin vÃ o CSDL
         from app.services.batch_processor import run_batch_processor_api
         results = run_batch_processor_api(file_paths=saved_temp_paths, db=db, max_threads=4)
-        success_count = sum(1 for item in results if item['status'] == 'Thành công')
+        success_count = sum(1 for item in results if item['status'] == 'ThÃ nh cÃ´ng')
                 
         if success_count == 0:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Tất cả các file tải lên đều trích xuất lỗi."
+                detail="Táº¥t cáº£ cÃ¡c file táº£i lÃªn Ä‘á»u trÃ­ch xuáº¥t lá»—i."
             )
             
-        # 3. Lấy dữ liệu từ database cho quý này (dựa vào inspection_date)
+        # 3. Láº¥y dá»¯ liá»‡u tá»« database cho quÃ½ nÃ y (dá»±a vÃ o inspection_date)
         if quarter == 1:
             months = [1, 2, 3]
         elif quarter == 2:
@@ -438,11 +439,11 @@ async def generate_report(
             extract('month', VesselORM.inspection_date).in_(months)
         ).all()
         
-        # 4. Tạo các tệp Excel trong bộ nhớ
+        # 4. Táº¡o cÃ¡c tá»‡p Excel trong bá»™ nhá»›
         registry_excel = generate_vessel_excel(vessels)
         summary_excel = generate_quarterly_summary_excel(vessels, quarter, year)
         
-        # 5. Đóng gói ZIP
+        # 5. ÄÃ³ng gÃ³i ZIP
         reports_dir = Path("saved_reports")
         reports_dir.mkdir(exist_ok=True)
         
@@ -454,7 +455,7 @@ async def generate_report(
             zip_file.writestr("tong_hop_ghi_so.xlsx", registry_excel.getvalue())
             zip_file.writestr("bao_cao_thong_ke.xlsx", summary_excel.getvalue())
             
-        # 6. Lưu thông tin vào lịch sử
+        # 6. LÆ°u thÃ´ng tin vÃ o lá»‹ch sá»­
         history_item = ReportHistoryORM(
             quarter=quarter,
             year=year,
@@ -470,7 +471,7 @@ async def generate_report(
         db.commit()
         db.refresh(history_item)
         
-        # 7. Trả về tệp ZIP tải về cho người dùng
+        # 7. Tráº£ vá» tá»‡p ZIP táº£i vá» cho ngÆ°á»i dÃ¹ng
         return FileResponse(
             path=str(zip_filepath.resolve()),
             media_type="application/zip",
@@ -481,7 +482,7 @@ async def generate_report(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Lỗi tạo báo cáo: {str(e)}"
+            detail=f"Lá»—i táº¡o bÃ¡o cÃ¡o: {str(e)}"
         )
     finally:
         for path in saved_temp_paths:
