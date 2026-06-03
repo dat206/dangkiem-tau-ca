@@ -44,7 +44,7 @@ function buildDownloadName(report) {
   return `report_${quarter}_${year}_${report.id}.zip`;
 }
 
-export default function HistoryPage() {
+export default function HistoryPage({ version = 0 }) {
   const [reports, setReports] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -93,7 +93,7 @@ export default function HistoryPage() {
     return () => {
       active = false;
     };
-  }, [fetchReports]);
+  }, [fetchReports, version]);
 
   function handleSubmit(event) {
     event.preventDefault();
@@ -116,7 +116,7 @@ export default function HistoryPage() {
       const blob = await downloadReportHistory(report.id);
       downloadBlob(blob, buildDownloadName(report));
     } catch {
-      setError('Không tải được báo cáo cũ. File có thể chưa tồn tại trên server.');
+      setError('Không tải được báo cáo cũ. File có thể chưa tồn tại trên server hoặc đã quá hạn 30 ngày.');
     } finally {
       setDownloadingId(null);
     }
@@ -212,8 +212,9 @@ export default function HistoryPage() {
                   <th className="w-16 px-4 py-3">STT</th>
                   <th className="px-4 py-3">Ngày tạo</th>
                   <th className="px-4 py-3">Quý/Năm</th>
-                  <th className="px-4 py-3">Số file DOCX</th>
+                  <th className="px-4 py-3">Số bản ghi</th>
                   <th className="px-4 py-3">Tỉnh</th>
+                  <th className="px-4 py-3">Loại file</th>
                   <th className="px-4 py-3 text-right">Download</th>
                 </tr>
               </thead>
@@ -225,9 +226,12 @@ export default function HistoryPage() {
                     </td>
                     <td className="px-4 py-3">{formatDate(report.created_at)}</td>
                     <td className="px-4 py-3">{formatQuarterYear(report)}</td>
-                    <td className="px-4 py-3">{report.file_count ?? 0}</td>
+                    <td className="px-4 py-3">{report.record_count ?? report.file_count ?? 0}</td>
                     <td className="max-w-xs px-4 py-3 text-slate-600">
                       {formatProvinces(report.provinces)}
+                    </td>
+                    <td className="px-4 py-3">
+                      {report.file_types?.length || report.file_count || 0} file Excel
                     </td>
                     <td className="px-4 py-3 text-right">
                       <button
@@ -272,8 +276,8 @@ export default function HistoryPage() {
                     <dd className="font-medium">{formatDate(report.created_at)}</dd>
                   </div>
                   <div>
-                    <dt className="text-slate-500">Số file DOCX</dt>
-                    <dd className="font-medium">{report.file_count ?? 0}</dd>
+                    <dt className="text-slate-500">Số bản ghi</dt>
+                    <dd className="font-medium">{report.record_count ?? report.file_count ?? 0}</dd>
                   </div>
                   <div className="col-span-2">
                     <dt className="text-slate-500">Tỉnh</dt>

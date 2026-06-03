@@ -1,49 +1,131 @@
-import React from 'react';
-import { Download, Filter, RefreshCw } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Download, Filter, RefreshCw, Trash2 } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import Button from '../components/ui/Button';
+import {
+  deleteReportHistory,
+  downloadBlob,
+  downloadReportHistory,
+  getReportCreators,
+  getReportHistory,
+} from '../api/reportApi';
 
-const MOCK_HISTORY = [
-  { id: 1, period: 'Quý I / 2026', date: '15/04/2026 · 09:32', creator: 'Nguyễn Thị B', provinces: '3 tỉnh', records: '139 bản ghi', files: '2 file Excel', status: 'available' },
-  { id: 2, period: 'Quý IV / 2025', date: '10/01/2026 · 14:15', creator: 'Admin Trần', provinces: '15 tỉnh', records: '450 bản ghi', files: '2 file Excel', status: 'available' },
-  { id: 3, period: 'Quý III / 2025', date: '05/10/2025 · 10:00', creator: 'Nguyễn Thị B', provinces: '15 tỉnh', records: '382 bản ghi', files: '2 file Excel', status: 'expired' },
-];
+const formatDate = (value) => {
+  if (!value) return '';
+  return new Intl.DateTimeFormat('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value));
+};
 
 const ReportHistory = () => {
+  const [filters, setFilters] = useState({ year: '', quarter: '', created_by: '' });
+  const [appliedFilters, setAppliedFilters] = useState(filters);
+  const [items, setItems] = useState([]);
+  const [creators, setCreators] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const loadHistory = () => {
+    setLoading(true);
+    setError('');
+
+    const params = Object.fromEntries(
+      Object.entries(appliedFilters).filter(([, value]) => value !== ''),
+    );
+
+    getReportHistory(params)
+      .then((data) => setItems(data.items || []))
+      .catch((err) => setError(err.response?.data?.detail || 'Không tải được lịch sử báo cáo.'))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadHistory();
+  }, [appliedFilters]);
+
+  useEffect(() => {
+    getReportCreators()
+      .then((data) => setCreators(data.items || []))
+      .catch(() => setCreators([]));
+  }, []);
+
+  const handleDownload = async (row) => {
+    try {
+      const blob = await downloadReportHistory(row.id);
+      downloadBlob(blob, `report_q${row.quarter}_${row.year}.zip`);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Không tải được file báo cáo.');
+    }
+  };
+
+  const handleDelete = async (row) => {
+    if (!window.confirm('Xóa lịch sử báo cáo này?')) return;
+
+    try {
+      await deleteReportHistory(row.id);
+      loadHistory();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Không xóa được lịch sử báo cáo.');
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      
       <Card>
-        <div style={{ padding: '16px 20px', display: 'flex', gap: 16, alignItems: 'flex-end', borderBottom: '1px solid var(--border-light)' }}>
+        <div style={{ padding: '16px 20px', display: 'flex', gap: 16, alignItems: 'flex-end', borderBottom: '1px solid var(--border-light)', flexWrap: 'wrap' }}>
           <div style={{ width: 150 }}>
             <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Năm báo cáo</label>
-            <select style={{ width: '100%', height: 36, borderRadius: 6, border: '1px solid var(--border)', padding: '0 8px' }}>
-              <option>Tất cả</option>
-              <option>2026</option>
-              <option>2025</option>
+            <select
+              value={filters.year}
+              onChange={(e) => setFilters((current) => ({ ...current, year: e.target.value }))}
+              style={{ width: '100%', height: 36, borderRadius: 6, border: '1px solid var(--border)', padding: '0 8px' }}
+            >
+              <option value="">Tất cả</option>
+              {[2026, 2025, 2024, 2023].map((year) => (
+                <option key={year} value={year}>{year}</option>
+              ))}
             </select>
           </div>
           <div style={{ width: 150 }}>
             <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Quý</label>
-            <select style={{ width: '100%', height: 36, borderRadius: 6, border: '1px solid var(--border)', padding: '0 8px' }}>
-              <option>Tất cả</option>
-              <option>Quý I</option>
-              <option>Quý II</option>
-              <option>Quý III</option>
-              <option>Quý IV</option>
+            <select
+              value={filters.quarter}
+              onChange={(e) => setFilters((current) => ({ ...current, quarter: e.target.value }))}
+              style={{ width: '100%', height: 36, borderRadius: 6, border: '1px solid var(--border)', padding: '0 8px' }}
+            >
+              <option value="">Tất cả</option>
+              {[1, 2, 3, 4].map((quarter) => (
+                <option key={quarter} value={quarter}>Quý {quarter}</option>
+              ))}
             </select>
           </div>
-          <div style={{ width: 200 }}>
-            <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Người tạo (Admin)</label>
-            <select style={{ width: '100%', height: 36, borderRadius: 6, border: '1px solid var(--border)', padding: '0 8px' }}>
-              <option>Tất cả</option>
-              <option>Nguyễn Thị B</option>
-              <option>Admin Trần</option>
+          <div style={{ width: 220 }}>
+            <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>Người tạo</label>
+            <select
+              value={filters.created_by}
+              onChange={(e) => setFilters((current) => ({ ...current, created_by: e.target.value }))}
+              style={{ width: '100%', height: 36, borderRadius: 6, border: '1px solid var(--border)', padding: '0 8px' }}
+            >
+              <option value="">Tất cả</option>
+              {creators.map((creator) => (
+                <option key={creator} value={creator}>{creator}</option>
+              ))}
             </select>
           </div>
-          <Button icon={Filter} style={{ height: 36 }}>Lọc</Button>
+          <Button icon={Filter} style={{ height: 36 }} onClick={() => setAppliedFilters(filters)}>Lọc</Button>
+          <Button variant="ghost" icon={RefreshCw} style={{ height: 36 }} loading={loading} onClick={loadHistory}>Tải lại</Button>
         </div>
+
+        {error && (
+          <div style={{ padding: '12px 20px', color: 'var(--error)', borderBottom: '1px solid var(--border-light)' }}>
+            {error}
+          </div>
+        )}
 
         <Table>
           <TableHeader>
@@ -52,39 +134,44 @@ const ReportHistory = () => {
               <TableHead>Kỳ báo cáo</TableHead>
               <TableHead>Ngày tạo</TableHead>
               <TableHead>Người tạo</TableHead>
-              <TableHead>Số tỉnh</TableHead>
+              <TableHead>Tỉnh</TableHead>
               <TableHead>Số bản ghi</TableHead>
               <TableHead>Loại file</TableHead>
-              <TableHead align="center">Tải lại</TableHead>
+              <TableHead align="center">Thao tác</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {MOCK_HISTORY.map((row, idx) => (
+            {items.map((row, idx) => (
               <TableRow key={row.id}>
                 <TableCell>{idx + 1}</TableCell>
-                <TableCell style={{ fontWeight: 600, color: 'var(--primary)' }}>{row.period}</TableCell>
-                <TableCell style={{ color: 'var(--text-muted)' }}>{row.date}</TableCell>
-                <TableCell>{row.creator}</TableCell>
+                <TableCell style={{ fontWeight: 600, color: 'var(--primary)' }}>Quý {row.quarter} / {row.year}</TableCell>
+                <TableCell style={{ color: 'var(--text-muted)' }}>{formatDate(row.created_at)}</TableCell>
+                <TableCell>{row.created_by}</TableCell>
                 <TableCell>{row.provinces}</TableCell>
-                <TableCell>{row.records}</TableCell>
-                <TableCell>{row.files}</TableCell>
+                <TableCell>{row.record_count}</TableCell>
+                <TableCell>{row.file_type_label || `${row.file_count} file Excel`}</TableCell>
                 <TableCell align="center">
-                  {row.status === 'available' ? (
-                    <Button variant="ghost" size="sm" icon={Download} title="Tải lại file ZIP">
-                      Tải lại
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
+                    <Button variant="ghost" size="sm" icon={Download} disabled={!row.has_file} onClick={() => handleDownload(row)}>
+                      Tải
                     </Button>
-                  ) : (
-                    <span style={{ fontSize: 12, color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <RefreshCw size={12} /> Hết hạn
-                    </span>
-                  )}
+                    <Button variant="ghost" size="sm" icon={Trash2} onClick={() => handleDelete(row)}>
+                      Xóa
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
+            {!loading && items.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={8} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 32 }}>
+                  Chưa có lịch sử báo cáo phù hợp.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </Card>
-      
     </div>
   );
 };

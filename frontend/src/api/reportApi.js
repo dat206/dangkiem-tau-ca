@@ -20,6 +20,38 @@ export const downloadReportHistory = async (reportId) => {
   return response.data;
 };
 
+export const deleteReportHistory = async (reportId) => {
+  const response = await axios.delete(`${API_URL}/reports/history/${reportId}`);
+  return response.data;
+};
+
+export const getReportCreators = async () => {
+  const response = await axios.get(`${API_URL}/reports/history/creators`);
+  return response.data;
+};
+
+export const getExportOptions = async (params) => {
+  const response = await axios.get(`${API_URL}/reports/export-options`, { params });
+  return response.data;
+};
+
+export const generateReportFromDb = async (config) => {
+  const formData = new FormData();
+  formData.append("quarter", config.quarter);
+  formData.append("year", config.year);
+  formData.append("provinces", Array.isArray(config.provinces) ? config.provinces.join(",") : config.provinces);
+  formData.append("file_types", Array.isArray(config.fileTypes) ? config.fileTypes.join(",") : config.fileTypes);
+  formData.append("created_by", config.createdBy || "Nguyen Thi Binh");
+
+  const response = await axios.post(`${API_URL}/reports/generate-from-db`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    },
+    responseType: 'blob'
+  });
+  return response.data;
+};
+
 /**
  * Trích xuất DOCX và sinh báo cáo ZIP trực tiếp.
  */
@@ -88,7 +120,11 @@ export const reportApi = {
   },
   uploadBatchReports,
   getReportHistory,
+  getReportCreators,
+  getExportOptions,
+  generateReportFromDb,
   downloadReportHistory,
+  deleteReportHistory,
   generateReport,
   downloadBlob
 };

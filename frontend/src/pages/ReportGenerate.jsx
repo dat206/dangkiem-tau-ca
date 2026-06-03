@@ -1,29 +1,80 @@
-import React, { useState, useEffect } from 'react';
-import { BarChart2, Info, AlertTriangle, FileSpreadsheet, CheckCircle2, Download, RefreshCw } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { AlertTriangle, BarChart2, CheckCircle2, Download, FileSpreadsheet, RefreshCw } from 'lucide-react';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
+import { downloadBlob, generateReportFromDb, getExportOptions } from '../api/reportApi';
 import styles from './ReportGenerate.module.css';
 
-const PROVINCES = [
-  { code: 'QN', name: 'Quảng Ninh', count: 84 },
-  { code: 'TH', name: 'Thanh Hóa', count: 31 },
-  { code: 'HT', name: 'Hà Tĩnh', count: 12 },
-  { code: 'NA', name: 'Nghệ An', count: 0 },
-  { code: 'QB', name: 'Quảng Bình', count: 5 },
-  { code: 'QT', name: 'Quảng Trị', count: 7 },
+const OUTPUT_TYPES = [
+  {
+    code: 'registry',
+    key: 'detail',
+    title: 'Bảng kê tổng hợp',
+    desc: 'Danh sách chi tiết từng tàu theo thứ tự thời gian',
+    icon: FileSpreadsheet,
+  },
+  {
+    code: 'summary',
+    key: 'summary',
+    title: 'Báo cáo quý theo tỉnh',
+    desc: 'Thống kê phân loại theo tỉnh, nhóm Lmax và vật liệu',
+    icon: BarChart2,
+  },
 ];
+
+const quarterLabel = (quarter) => ['I', 'II', 'III', 'IV'][quarter - 1];
 
 const ReportGenerate = () => {
   const [quarter, setQuarter] = useState(1);
-  const [year, setYear] = useState(2026);
-  const [selectedProvinces, setSelectedProvinces] = useState(['QN', 'TH', 'HT', 'QB', 'QT']);
+  const [year, setYear] = useState(new Date().getFullYear());
+  const [options, setOptions] = useState({ total: 0, provinces: [] });
+  const [selectedProvinces, setSelectedProvinces] = useState([]);
   const [formats, setFormats] = useState({ detail: true, summary: true });
-  const [status, setStatus] = useState('idle'); // idle, loading, success
+  const [status, setStatus] = useState('idle');
+  const [error, setError] = useState('');
 
-  const totalRecords = PROVINCES.filter(p => selectedProvinces.includes(p.code)).reduce((sum, p) => sum + p.count, 0);
+  useEffect(() => {
+    let active = true;
+    setStatus('loading-options');
+    setError('');
+
+    getExportOptions({ quarter, year })
+      .then((data) => {
+        if (!active) return;
+        setOptions(data);
+        setSelectedProvinces((current) => {
+          const validCodes = new Set((data.provinces || []).map((item) => item.code));
+          const kept = current.filter((code) => validCodes.has(code));
+          if (kept.length > 0) return kept;
+          return (data.provinces || []).filter((item) => item.count > 0).map((item) => item.code);
+        });
+        setStatus('idle');
+      })
+      .catch((err) => {
+        if (!active) return;
+        setOptions({ total: 0, provinces: [] });
+        setSelectedProvinces([]);
+        setError(err.response?.data?.detail || 'Không tải được dữ liệu báo cáo từ CSDL.');
+        setStatus('idle');
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [quarter, year]);
+
+  const totalRecords = useMemo(
+    () =>
+      (options.provinces || [])
+        .filter((province) => selectedProvinces.includes(province.code))
+        .reduce((sum, province) => sum + (province.count || 0), 0),
+    [options.provinces, selectedProvinces],
+  );
+
+  const selectedFileTypes = OUTPUT_TYPES.filter((type) => formats[type.key]).map((type) => type.code);
 
   const handleSelectAll = () => {
-    setSelectedProvinces(PROVINCES.map(p => p.code));
+    setSelectedProvinces((options.provinces || []).map((province) => province.code));
   };
 
   const handleDeselectAll = () => {
@@ -31,39 +82,48 @@ const ReportGenerate = () => {
   };
 
   const handleToggleProvince = (code) => {
-    setSelectedProvinces(prev => 
-      prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]
+    setSelectedProvinces((current) =>
+      current.includes(code) ? current.filter((item) => item !== code) : [...current, code],
     );
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     setStatus('loading');
-    setTimeout(() => {
+    setError('');
+
+    try {
+      const blob = await generateReportFromDb({
+        quarter,
+        year,
+        provinces: selectedProvinces,
+        fileTypes: selectedFileTypes,
+        createdBy: 'Nguyen Thi Binh',
+      });
+      downloadBlob(blob, `report_q${quarter}_${year}.zip`);
       setStatus('success');
-    }, 2000);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Không tạo được báo cáo.');
+      setStatus('idle');
+    }
   };
+
+  const isLoading = status === 'loading' || status === 'loading-options';
 
   return (
     <div className={styles.generatePage}>
-      
       {status === 'success' ? (
         <div className={styles.successBanner}>
           <CheckCircle2 className={styles.successIcon} />
           <h2 className={styles.successTitle}>Báo cáo tạo thành công</h2>
           <p className={styles.successDesc}>
-            Đã tổng hợp <strong>{totalRecords} tàu</strong> · <strong>{selectedProvinces.length} tỉnh</strong> · <strong>Quý {['I', 'II', 'III', 'IV'][quarter-1]}/{year}</strong>
+            Đã tổng hợp <strong>{totalRecords} tàu</strong> · <strong>{selectedProvinces.length} tỉnh</strong> ·{' '}
+            <strong>Quý {quarterLabel(quarter)}/{year}</strong>
           </p>
-          
+
           <div className={styles.downloadActions}>
-            <Button variant="primary" icon={Download}>
-              Tải Bảng kê tổng hợp
+            <Button variant="primary" icon={Download} onClick={handleGenerate}>
+              Tải lại file ZIP
             </Button>
-            <Button variant="secondary" icon={Download}>
-              Tải Báo cáo quý
-            </Button>
-          </div>
-          
-          <div style={{ marginTop: 16 }}>
             <Button variant="ghost" onClick={() => setStatus('idle')} icon={RefreshCw}>
               Tạo báo cáo khác
             </Button>
@@ -71,51 +131,54 @@ const ReportGenerate = () => {
         </div>
       ) : (
         <>
-          {/* Section A */}
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>1. Chọn kỳ báo cáo</h2>
-            
+
             <div className={styles.quarterSelector}>
-              {[1, 2, 3, 4].map(q => (
-                <button 
-                  key={q}
-                  className={`${styles.quarterBtn} ${quarter === q ? styles.quarterBtnActive : ''}`}
-                  onClick={() => setQuarter(q)}
+              {[1, 2, 3, 4].map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  className={`${styles.quarterBtn} ${quarter === item ? styles.quarterBtnActive : ''}`}
+                  onClick={() => setQuarter(item)}
                 >
-                  Quý {['I', 'II', 'III', 'IV'][q-1]}
+                  Quý {quarterLabel(item)}
                 </button>
               ))}
             </div>
 
             <div className={styles.yearInput}>
-              <Input 
-                type="number" 
-                label="Năm" 
-                value={year} 
-                onChange={(e) => setYear(Number(e.target.value))} 
-              />
+              <Input type="number" label="Năm" value={year} min="2000" max="2100" onChange={(e) => setYear(Number(e.target.value))} />
             </div>
 
             {totalRecords > 0 ? (
               <div className={styles.infoBox}>
                 <BarChart2 className={styles.infoIcon} />
                 <div className={styles.infoContent}>
-                  <strong>Quý {['I', 'II', 'III', 'IV'][quarter-1]}/{year}</strong>: Dữ liệu từ {quarter === 1 ? '01/01' : quarter === 2 ? '01/04' : quarter === 3 ? '01/07' : '01/10'}/{year} đến {quarter === 1 ? '31/03' : quarter === 2 ? '30/06' : quarter === 3 ? '30/09' : '31/12'}/{year}.<br/>
-                  Hiện có <strong>{totalRecords} bản ghi</strong> trong DB cho kỳ này.
+                  <strong>Quý {quarterLabel(quarter)}/{year}</strong>
+                  {options.period_start && <>: {options.period_start} đến {options.period_end}.</>}
+                  <br />
+                  Hiện có <strong>{totalRecords}</strong> bản ghi đã chọn trong DB.
                 </div>
               </div>
             ) : (
               <div className={styles.warningBox}>
                 <AlertTriangle size={20} />
-                Không có dữ liệu cho kỳ này. Hãy upload hồ sơ trước.
+                {status === 'loading-options' ? 'Đang tải dữ liệu...' : 'Không có dữ liệu cho lựa chọn hiện tại.'}
+              </div>
+            )}
+
+            {error && (
+              <div className={styles.warningBox}>
+                <AlertTriangle size={20} />
+                {error}
               </div>
             )}
           </div>
 
-          {/* Section B */}
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>2. Chọn tỉnh báo cáo</h2>
-            
+
             <div className={styles.selectionActions}>
               <span>Đã chọn {selectedProvinces.length} tỉnh · {totalRecords} bản ghi</span>
               <div style={{ display: 'flex', gap: 12 }}>
@@ -125,74 +188,65 @@ const ReportGenerate = () => {
             </div>
 
             <div className={styles.provinceGrid}>
-              {PROVINCES.map(prov => {
-                const checked = selectedProvinces.includes(prov.code);
+              {(options.provinces || []).map((province) => {
+                const checked = selectedProvinces.includes(province.code);
                 return (
-                  <label key={prov.code} className={`${styles.provinceCheckbox} ${checked ? styles.checked : ''}`}>
-                    <input 
-                      type="checkbox" 
-                      className={styles.checkboxInput} 
+                  <label key={province.code} className={`${styles.provinceCheckbox} ${checked ? styles.checked : ''}`}>
+                    <input
+                      type="checkbox"
+                      className={styles.checkboxInput}
                       checked={checked}
-                      onChange={() => handleToggleProvince(prov.code)}
+                      onChange={() => handleToggleProvince(province.code)}
                     />
-                    <span className={styles.provinceLabel}>{prov.name}</span>
-                    <span className={styles.provinceCount}>{prov.count}</span>
+                    <span className={styles.provinceLabel}>{province.name}</span>
+                    <span className={styles.provinceCount}>{province.count}</span>
                   </label>
                 );
               })}
             </div>
           </div>
 
-          {/* Action Area */}
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>3. Định dạng đầu ra</h2>
-            
+
             <div className={styles.formatCards}>
-              <div 
-                className={`${styles.formatCard} ${formats.detail ? styles.checked : ''}`}
-                onClick={() => setFormats(prev => ({ ...prev, detail: !prev.detail }))}
-              >
-                <div style={{ marginTop: 2 }}>
-                  <input type="checkbox" checked={formats.detail} readOnly className={styles.checkboxInput} />
-                </div>
-                <FileSpreadsheet className={styles.formatIcon} size={24} />
-                <div className={styles.formatInfo}>
-                  <span className={styles.formatTitle}>Bảng kê tổng hợp</span>
-                  <span className={styles.formatDesc}>Danh sách chi tiết từng tàu theo thứ tự thời gian</span>
-                </div>
-              </div>
-              
-              <div 
-                className={`${styles.formatCard} ${formats.summary ? styles.checked : ''}`}
-                onClick={() => setFormats(prev => ({ ...prev, summary: !prev.summary }))}
-              >
-                <div style={{ marginTop: 2 }}>
-                  <input type="checkbox" checked={formats.summary} readOnly className={styles.checkboxInput} />
-                </div>
-                <BarChart2 className={styles.formatIcon} size={24} />
-                <div className={styles.formatInfo}>
-                  <span className={styles.formatTitle}>Báo cáo quý theo tỉnh</span>
-                  <span className={styles.formatDesc}>Thống kê phân loại theo tỉnh, nhóm Lmax và vật liệu</span>
-                </div>
-              </div>
+              {OUTPUT_TYPES.map((type) => {
+                const Icon = type.icon;
+                const checked = formats[type.key];
+                return (
+                  <div
+                    key={type.code}
+                    className={`${styles.formatCard} ${checked ? styles.checked : ''}`}
+                    onClick={() => setFormats((current) => ({ ...current, [type.key]: !current[type.key] }))}
+                  >
+                    <div style={{ marginTop: 2 }}>
+                      <input type="checkbox" checked={checked} readOnly className={styles.checkboxInput} />
+                    </div>
+                    <Icon className={styles.formatIcon} size={24} />
+                    <div className={styles.formatInfo}>
+                      <span className={styles.formatTitle}>{type.title}</span>
+                      <span className={styles.formatDesc}>{type.desc}</span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             <div className={styles.submitArea}>
-              <Button 
-                size="lg" 
-                style={{ width: '100%' }} 
-                icon={status === 'loading' ? null : RefreshCw}
-                loading={status === 'loading'}
-                disabled={selectedProvinces.length === 0 || (!formats.detail && !formats.summary) || totalRecords === 0}
+              <Button
+                size="lg"
+                style={{ width: '100%' }}
+                icon={isLoading ? null : RefreshCw}
+                loading={isLoading}
+                disabled={selectedProvinces.length === 0 || selectedFileTypes.length === 0 || totalRecords === 0}
                 onClick={handleGenerate}
               >
-                {status === 'loading' ? 'Đang tổng hợp dữ liệu từ DB...' : 'Tạo báo cáo & Tải xuống'}
+                {isLoading ? 'Đang xử lý dữ liệu...' : 'Tạo báo cáo & Tải xuống'}
               </Button>
             </div>
           </div>
         </>
       )}
-
     </div>
   );
 };
