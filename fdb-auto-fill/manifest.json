@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "FDB Vessel Auto Fill",
+  "version": "1.0.0",
+  "description": "Tra cứu tàu cá từ backend và tự động điền form FDB theo số đăng ký.",
+  "permissions": ["storage", "tabs", "scripting", "activeTab"],
+  "host_permissions": [
+    "http://localhost:8000/*",
+    "http://127.0.0.1:8000/*",
+    "https://localhost:8000/*",
+    "http://vnf.tongcucthuysan.gov.vn/*",
+    "https://vnf.tongcucthuysan.gov.vn/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "http://vnf.tongcucthuysan.gov.vn/*",
+        "https://vnf.tongcucthuysan.gov.vn/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}
