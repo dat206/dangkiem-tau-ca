@@ -1,5 +1,5 @@
-import React from 'react';
-import { Save, Upload as UploadIcon, Shield, Building, FileBarChart } from 'lucide-react';
+
+import { Save, Shield, Building } from 'lucide-react';
 import { Card, CardHeader, CardContent, CardFooter } from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';

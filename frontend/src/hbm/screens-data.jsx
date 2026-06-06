@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef } from 'react';
 import { Card, Header, Badge, Icon, Button, IconBtn, EmptyState } from './chrome';
-import { VESSELS, PROVINCES, provName, inspLabel, lmaxGroup, REPORT_HISTORY, QUARTERS, inspTone, hullTone } from './data';
+import { PROVINCES, provName, inspLabel, lmaxGroup, REPORT_HISTORY, QUARTERS, inspTone, hullTone } from './data';
 import { reportApi } from '../api/reportApi';
 
 // ─── UPLOAD ──────────────────────────────────────────────────────────────────
@@ -253,7 +253,7 @@ import { useEffect } from 'react';
 // ─── VESSELS ─────────────────────────────────────────────────────────────────
 export function VesselsScreen({ density, role }) {
   const [vessels, setVessels] = useState([]);
-  const [loading, setLoading] = useState(true);
+
   const [search, setSearch] = useState("");
   const [prov, setProv] = useState("all");
   const [insp, setInsp] = useState("all");
@@ -278,11 +278,9 @@ export function VesselsScreen({ density, role }) {
           date: v.issued_date || "N/A"
         }));
         setVessels(mapped);
-        setLoading(false);
       }
     }).catch(err => {
       console.error(err);
-      if (mounted) setLoading(false);
     });
     return () => { mounted = false };
   }, []);

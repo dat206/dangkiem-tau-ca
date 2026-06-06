@@ -1,4 +1,4 @@
-import React from 'react';
+import { Fragment } from 'react';
 import { NAV_MAIN, NAV_ADMIN } from './data';
 
 // ─── SVG icon set (1.5px stroke, currentColor, 20px viewBox) ─────────────────
@@ -201,10 +201,10 @@ export const Header = ({ title, subtitle, breadcrumb, actions, lastUpdated }) =>
       {breadcrumb && (
         <div style={{fontSize:12, color:"var(--text-soft)", display:"flex", gap:6}}>
           {breadcrumb.map((b,i)=>(
-            <React.Fragment key={i}>
+            <Fragment key={i}>
               {i>0 && <span>›</span>}
               <span style={{color: i===breadcrumb.length-1 ? "var(--text-body)" : "var(--text-soft)"}}>{b}</span>
-            </React.Fragment>
+            </Fragment>
           ))}
         </div>
       )}

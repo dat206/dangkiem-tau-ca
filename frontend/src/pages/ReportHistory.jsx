@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Download, Filter, RefreshCw, Trash2 } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
@@ -30,7 +30,7 @@ const ReportHistory = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const loadHistory = () => {
+  const loadHistory = useCallback(async () => {
     setLoading(true);
     setError('');
 
@@ -38,15 +38,22 @@ const ReportHistory = () => {
       Object.entries(appliedFilters).filter(([, value]) => value !== ''),
     );
 
-    getReportHistory(params)
-      .then((data) => setItems(data.items || []))
-      .catch((err) => setError(err.response?.data?.detail || 'Không tải được lịch sử báo cáo.'))
-      .finally(() => setLoading(false));
-  };
+    try {
+      const data = await getReportHistory(params);
+      setItems(data.items || []);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Không tải được lịch sử báo cáo.');
+    } finally {
+      setLoading(false);
+    }
+  }, [appliedFilters]);
 
   useEffect(() => {
-    loadHistory();
-  }, [appliedFilters]);
+    const loadData = async () => {
+      await loadHistory();
+    };
+    loadData();
+  }, [loadHistory]);
 
   useEffect(() => {
     getReportCreators()

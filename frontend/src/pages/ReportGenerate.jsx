@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, BarChart2, CheckCircle2, Download, FileSpreadsheet, RefreshCw } from 'lucide-react';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
@@ -35,11 +35,13 @@ const ReportGenerate = () => {
 
   useEffect(() => {
     let active = true;
-    setStatus('loading-options');
-    setError('');
 
-    getExportOptions({ quarter, year })
-      .then((data) => {
+    const fetchOptions = async () => {
+      setStatus('loading-options');
+      setError('');
+
+      try {
+        const data = await getExportOptions({ quarter, year });
         if (!active) return;
         setOptions(data);
         setSelectedProvinces((current) => {
@@ -49,14 +51,16 @@ const ReportGenerate = () => {
           return (data.provinces || []).filter((item) => item.count > 0).map((item) => item.code);
         });
         setStatus('idle');
-      })
-      .catch((err) => {
+      } catch (err) {
         if (!active) return;
         setOptions({ total: 0, provinces: [] });
         setSelectedProvinces([]);
         setError(err.response?.data?.detail || 'Không tải được dữ liệu báo cáo từ CSDL.');
         setStatus('idle');
-      });
+      }
+    };
+
+    fetchOptions();
 
     return () => {
       active = false;
