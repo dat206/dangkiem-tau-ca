@@ -135,13 +135,10 @@ export const reportApi = {
   },
   uploadBatchReports,
   getReportHistory,
-<<<<<<< Updated upstream
   getReportCreators,
   getExportOptions,
   generateReportFromDb,
-=======
   getVessels,
->>>>>>> Stashed changes
   downloadReportHistory,
   deleteReportHistory,
   generateReport,
