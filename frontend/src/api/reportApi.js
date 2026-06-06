@@ -1,6 +1,21 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8000')
+  .replace(/\/api\/?$/, '')
+  .replace(/\/$/, '');
+const API_URL = `${API_BASE}/api`;
+
+/**
+ * Lấy danh sách tàu.
+ */
+export const getVessels = async (params = {}) => {
+  const token = localStorage.getItem('token');
+  const response = await axios.get(`${API_URL}/vessels`, {
+    headers: { Authorization: `Bearer ${token}` },
+    params: params
+  });
+  return response.data;
+};
 
 /**
  * Lấy lịch sử xuất báo cáo.
@@ -15,6 +30,38 @@ export const getReportHistory = async (params) => {
  */
 export const downloadReportHistory = async (reportId) => {
   const response = await axios.get(`${API_URL}/reports/history/${reportId}/download`, {
+    responseType: 'blob'
+  });
+  return response.data;
+};
+
+export const deleteReportHistory = async (reportId) => {
+  const response = await axios.delete(`${API_URL}/reports/history/${reportId}`);
+  return response.data;
+};
+
+export const getReportCreators = async () => {
+  const response = await axios.get(`${API_URL}/reports/history/creators`);
+  return response.data;
+};
+
+export const getExportOptions = async (params) => {
+  const response = await axios.get(`${API_URL}/reports/export-options`, { params });
+  return response.data;
+};
+
+export const generateReportFromDb = async (config) => {
+  const formData = new FormData();
+  formData.append("quarter", config.quarter);
+  formData.append("year", config.year);
+  formData.append("provinces", Array.isArray(config.provinces) ? config.provinces.join(",") : config.provinces);
+  formData.append("file_types", Array.isArray(config.fileTypes) ? config.fileTypes.join(",") : config.fileTypes);
+  formData.append("created_by", config.createdBy || "Nguyen Thi Binh");
+
+  const response = await axios.post(`${API_URL}/reports/generate-from-db`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    },
     responseType: 'blob'
   });
   return response.data;
@@ -88,7 +135,12 @@ export const reportApi = {
   },
   uploadBatchReports,
   getReportHistory,
+  getReportCreators,
+  getExportOptions,
+  generateReportFromDb,
+  getVessels,
   downloadReportHistory,
+  deleteReportHistory,
   generateReport,
   downloadBlob
 };

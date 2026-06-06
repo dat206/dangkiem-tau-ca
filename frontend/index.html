@@ -6,6 +6,17 @@
     <title>Hệ thống Đăng kiểm Tàu cá</title>
   </head>
   <body>
+    <div id="error-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,0,0,0.9); color:white; z-index:9999; padding:20px; font-family:monospace; white-space:pre-wrap;"></div>
+    <script>
+      window.onerror = function(message, source, lineno, colno, error) {
+        document.getElementById('error-overlay').style.display = 'block';
+        document.getElementById('error-overlay').innerText = 'ERROR: ' + message + '\n\n' + (error && error.stack ? error.stack : '');
+      };
+      window.onunhandledrejection = function(event) {
+        document.getElementById('error-overlay').style.display = 'block';
+        document.getElementById('error-overlay').innerText = 'PROMISE REJECTION: ' + event.reason;
+      };
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

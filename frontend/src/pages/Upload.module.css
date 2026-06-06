@@ -1,0 +1,245 @@
+.uploadPage {
+  display: flex;
+  gap: 24px;
+  height: calc(100vh - 120px);
+}
+
+.leftPanel {
+  flex: 0 0 40%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rightPanel {
+  flex: 0 0 60%;
+  display: flex;
+  flex-direction: column;
+}
+
+.dropZone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background-color: var(--surface-hover);
+  transition: var(--transition);
+  cursor: pointer;
+  position: relative;
+}
+
+.dropZone:hover, .dragActive {
+  border-color: var(--primary);
+  background-color: rgba(11, 61, 107, 0.05);
+}
+
+.dropIcon {
+  color: var(--primary);
+  margin-bottom: 16px;
+}
+
+.dropText {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 8px;
+}
+
+.dropSubtext {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 200px;
+  margin: 16px 0;
+  color: var(--text-light);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.divider::before, .divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background-color: var(--border);
+}
+
+.fileInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.fileList {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background-color: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+}
+
+.fileItem {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background-color: var(--background);
+  border: 1px solid var(--border);
+}
+
+.fileIcon {
+  color: var(--info);
+  margin-right: 12px;
+}
+
+.fileInfo {
+  flex: 1;
+  overflow: hidden;
+}
+
+.fileName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fileSize {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.removeBtn {
+  color: var(--text-light);
+  padding: 4px;
+}
+
+.removeBtn:hover {
+  color: var(--error);
+}
+
+.resultsFeed {
+  flex: 1;
+  background-color: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.resultsHeader {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--surface-hover);
+}
+
+.summaryBanner {
+  display: flex;
+  gap: 16px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.summarySuccess { color: var(--success); }
+.summaryWarning { color: var(--warning); }
+.summaryError { color: var(--error); }
+
+.resultsList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.resultItem {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background-color: var(--background);
+}
+
+.resultTop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.resultIcon {
+  flex-shrink: 0;
+}
+
+.resultFileName {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-main);
+}
+
+.resultDetails {
+  font-size: 13px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dot {
+  color: var(--border);
+}
+
+.emptyState {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 40px;
+}
+
+.emptyIcon {
+  color: var(--border);
+  margin-bottom: 16px;
+  width: 64px;
+  height: 64px;
+}
+
+@media (max-width: 900px) {
+  .uploadPage {
+    flex-direction: column;
+    height: auto;
+  }
+  .leftPanel, .rightPanel {
+    flex: none;
+  }
+}

@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .routers.report import router as report_router
 from .routers.auth import router as auth_router
+from .routers.vessels import router as vessels_router
 
 app = FastAPI(
     title="Fishing Vessel Report API",
@@ -31,9 +32,27 @@ app.add_middleware(
 # Tất cả route reports được đăng ký qua report_router với prefix /api/reports
 # Ví dụ: POST /api/reports/generate-report, POST /api/reports/upload-batch
 app.include_router(report_router, prefix="/api")
-
-# Auth routes: POST /api/auth/register, POST /api/auth/login, POST /api/auth/logout, GET /api/auth/me
 app.include_router(auth_router, prefix="/api")
+
+# -- Direct API alias for generate-report to match API.md specification -------
+from fastapi import UploadFile, File, Form, Depends
+from sqlalchemy.orm import Session
+from app.database import get_db
+from app.routers.report import generate_report
+
+@app.post("/api/generate-report")
+async def generate_report_direct(
+    files: list[UploadFile] = File(...),
+    quarter: int = Form(...),
+    year: int = Form(...),
+    provinces: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    return await generate_report(files=files, quarter=quarter, year=year, provinces=provinces, db=db)
+
+
+# Vessels routes: GET /api/vessels
+app.include_router(vessels_router, prefix="/api")
 
 # -- Root endpoints -----------------------------------------------------------
 @app.get("/")

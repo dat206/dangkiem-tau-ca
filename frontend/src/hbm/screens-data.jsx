@@ -1,27 +1,91 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Card, Header, Badge, Icon, Button, IconBtn, EmptyState } from './chrome';
-import { VESSELS, PROVINCES, provName, inspLabel, lmaxGroup, REPORT_HISTORY, QUARTERS, inspTone, hullTone } from './data';
+import { PROVINCES, provName, inspLabel, lmaxGroup, REPORT_HISTORY, QUARTERS, inspTone, hullTone } from './data';
+import { reportApi } from '../api/reportApi';
 
 // ─── UPLOAD ──────────────────────────────────────────────────────────────────
 export function UploadScreen() {
-  const [files, setFiles] = useState([
-    { name: "417_90599_ĐK_QN.docx", size: 142, status: "ok",   parsed: { reg:"QN-90599-TS", owner:"Nguyễn Văn An",    prov:"Quảng Ninh",  lmax:18.5, insp:"ĐK" } },
-    { name: "418_90523_HN_QN.docx", size: 138, status: "dup",  msg:"Đã tồn tại trong CSDL, bỏ qua", existingId: 2 },
-    { name: "419_12048_TĐ_HP.docx", size: 156, status: "ok",   parsed: { reg:"HP-12048-TS", owner:"Lê Quang Cường",   prov:"Hải Phòng",   lmax:22.0, insp:"TĐ" } },
-    { name: "420_12110_ĐK_HP.docx", size: 149, status: "ok",   parsed: { reg:"HP-12110-TS", owner:"Phạm Minh Dũng",   prov:"Hải Phòng",   lmax:19.8, insp:"ĐK" } },
-    { name: "bad_unknown.docx",      size: 88,  status: "err",  msg:"Không tìm thấy Số đăng ký trong tài liệu" },
-    { name: "422_77512_HN_TH.docx", size: 144, status: "queue" },
-    { name: "423_77840_GS_TH.docx", size: 151, status: "queue" },
-  ]);
+  const [files, setFiles] = useState([]);
   const [expanded, setExpanded] = useState(0);
   const [drag, setDrag] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const fileInputRef = useRef(null);
 
   const okCount  = files.filter(f=>f.status==="ok").length;
   const dupCount = files.filter(f=>f.status==="dup").length;
   const errCount = files.filter(f=>f.status==="err").length;
 
   const reset = () => setFiles([]);
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const newFiles = Array.from(e.target.files).map(f => ({
+        fileObj: f,
+        name: f.name,
+        size: Math.round(f.size / 1024),
+        status: "queue"
+      }));
+      setFiles(prev => [...prev, ...newFiles]);
+    }
+    // reset input
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const processFiles = async () => {
+    if (files.length === 0) return;
+    setProcessing(true);
+    
+    const fileObjects = files.map(f => f.fileObj).filter(Boolean);
+    if (fileObjects.length === 0) {
+      setProcessing(false);
+      return;
+    }
+
+    try {
+      const res = await reportApi.uploadBatchReports(fileObjects);
+      const results = res.data || [];
+      
+      setFiles(files.map(f => {
+        const result = results.find(r => r.file_name === f.name);
+        if (!result) return { ...f, status: "err", msg: "Không có phản hồi từ máy chủ" };
+        
+        if (result.status === "Thành công") {
+          return {
+            ...f,
+            status: "ok",
+            parsed: {
+              reg: result.so_dang_ky,
+              owner: result.ho_ten || "N/A",
+              prov: result.ma_tinh || "UNK",
+              lmax: result.lmax || 0,
+              insp: result.hinh_thuc_kiem_tra || "N/A"
+            }
+          };
+        } else if (result.status === "Trùng lặp") {
+          return { 
+            ...f, 
+            status: "dup", 
+            msg: result.error_msg || "Đã tồn tại trong CSDL",
+            parsed: {
+              reg: result.so_dang_ky,
+              owner: result.ho_ten || "N/A",
+              prov: result.ma_tinh || "UNK",
+              lmax: result.lmax || 0,
+              insp: result.hinh_thuc_kiem_tra || "N/A"
+            }
+          };
+        } else if (result.status === "Lỗi lưu DB") {
+          return { ...f, status: "err", msg: result.error_msg || "Lỗi lưu DB" };
+        } else {
+          return { ...f, status: "err", msg: result.error_msg || "Lỗi trích xuất" };
+        }
+      }));
+    } catch (err) {
+      alert("Lỗi máy chủ: " + (err.response?.data?.detail || err.message));
+    } finally {
+      setProcessing(false);
+    }
+  };
 
   return (
     <div className="page-pad">
@@ -38,7 +102,18 @@ export function UploadScreen() {
           <Card>
             <div
               onDragEnter={()=>setDrag(true)} onDragLeave={()=>setDrag(false)}
-              onDragOver={(e)=>{e.preventDefault();}} onDrop={(e)=>{e.preventDefault(); setDrag(false);}}
+              onDragOver={(e)=>{e.preventDefault();}} 
+              onDrop={(e)=>{
+                e.preventDefault(); 
+                setDrag(false);
+                if (e.dataTransfer.files) {
+                  const newFiles = Array.from(e.dataTransfer.files).map(f => ({
+                    fileObj: f, name: f.name, size: Math.round(f.size / 1024), status: "queue"
+                  }));
+                  setFiles(prev => [...prev, ...newFiles]);
+                }
+              }}
+              onClick={() => fileInputRef.current?.click()}
               style={{
                 border:`2px dashed ${drag ? "var(--brand-primary)" : "var(--border-strong)"}`,
                 borderRadius:12, padding:"32px 20px", textAlign:"center",
@@ -46,6 +121,7 @@ export function UploadScreen() {
                 transition: "all .15s ease", cursor:"pointer",
               }}
             >
+              <input type="file" multiple accept=".docx" ref={fileInputRef} onChange={handleFileChange} style={{display:"none"}} />
               <div style={{
                 width:56, height:56, borderRadius:14, background:"var(--brand-tint)",
                 color:"var(--brand-primary)", display:"inline-flex", alignItems:"center", justifyContent:"center",
@@ -55,7 +131,7 @@ export function UploadScreen() {
               </div>
               <div style={{fontSize:15, fontWeight:600, color:"var(--text-strong)", marginBottom:4}}>Kéo thả file .docx vào đây</div>
               <div style={{fontSize:12.5, color:"var(--text-soft)", marginBottom:14}}>hoặc bấm để chọn từ máy tính · tối đa 50 file</div>
-              <Button variant="secondary" icon="folder">Chọn file</Button>
+              <Button variant="secondary" icon="folder" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}>Chọn file</Button>
               <div style={{fontSize:11, color:"var(--text-soft)", marginTop:14}}>
                 Chỉ chấp nhận định dạng <code style={{fontFamily:"var(--font-mono)", color:"var(--text-body)"}}>.docx</code>
               </div>
@@ -63,7 +139,7 @@ export function UploadScreen() {
           </Card>
 
           <Card pad={0}>
-            <div style={{padding:"14px 16px", borderBottom:"1px solid var(--border-soft)", display:"flex", justifyBetween:"space-between", alignItems:"center"}}>
+            <div style={{padding:"14px 16px", borderBottom:"1px solid var(--border-soft)", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
               <div style={{fontSize:13, fontWeight:600, color:"var(--text-strong)"}}>{files.length} file đã chọn</div>
               {files.length>0 && <button onClick={reset} style={{border:"none", background:"transparent", color:"var(--text-soft)", fontSize:12, cursor:"pointer"}}>Xóa hết</button>}
             </div>
@@ -84,7 +160,7 @@ export function UploadScreen() {
                   {f.status==="dup"   && <Badge tone="amber" size="sm" dot>Trùng</Badge>}
                   {f.status==="err"   && <Badge tone="red"   size="sm" dot>Lỗi</Badge>}
                   {f.status==="queue" && <Badge tone="slate" size="sm">Chờ</Badge>}
-                  <button style={{border:"none", background:"transparent", color:"var(--text-soft)", cursor:"pointer", padding:4}}>
+                  <button onClick={() => setFiles(files.filter((_, idx) => idx !== i))} style={{border:"none", background:"transparent", color:"var(--text-soft)", cursor:"pointer", padding:4}}>
                     <Icon name="close" size={14}/>
                   </button>
                 </div>
@@ -94,8 +170,8 @@ export function UploadScreen() {
 
           <Button variant="primary" size="lg" icon="upload"
             disabled={files.length===0 || processing}
-            onClick={()=>{ setProcessing(true); setTimeout(()=>setProcessing(false), 1500); }}>
-            {processing ? `Đang xử lý 5/${files.length} file...` : "Xử lý & Lưu vào CSDL"}
+            onClick={processFiles}>
+            {processing ? `Đang xử lý ${files.length} file...` : "Xử lý & Lưu vào CSDL"}
           </Button>
 
           {processing && (
@@ -172,8 +248,12 @@ export function UploadScreen() {
   );
 }
 
+import { useEffect } from 'react';
+
 // ─── VESSELS ─────────────────────────────────────────────────────────────────
 export function VesselsScreen({ density, role }) {
+  const [vessels, setVessels] = useState([]);
+
   const [search, setSearch] = useState("");
   const [prov, setProv] = useState("all");
   const [insp, setInsp] = useState("all");
@@ -181,7 +261,31 @@ export function VesselsScreen({ density, role }) {
   const [page, setPage] = useState(1);
   const [drawer, setDrawer] = useState(null);
 
-  const filtered = useMemo(()=>VESSELS.filter(v=>{
+  useEffect(() => {
+    let mounted = true;
+    reportApi.getVessels({ limit: 1000 }).then(res => {
+      if (mounted) {
+        const mapped = res.items.map(v => ({
+          reg: v.registration_number,
+          owner: v.owner_name,
+          prov: v.province_code,
+          lmax: v.lmax,
+          insp: v.inspection_type === "Hàng năm" ? "HN" : 
+                v.inspection_type === "Định kỳ" ? "ĐK" :
+                v.inspection_type === "Trên đà" ? "TĐ" :
+                v.inspection_type === "Giám sát" ? "GS" : v.inspection_type,
+          hull: v.material,
+          date: v.issued_date || "N/A"
+        }));
+        setVessels(mapped);
+      }
+    }).catch(err => {
+      console.error(err);
+    });
+    return () => { mounted = false };
+  }, []);
+
+  const filtered = useMemo(()=>vessels.filter(v=>{
     if (search && !(`${v.reg} ${v.owner}`.toLowerCase().includes(search.toLowerCase()))) return false;
     if (prov !== "all" && v.prov !== prov) return false;
     if (insp !== "all" && v.insp !== insp) return false;
@@ -190,7 +294,7 @@ export function VesselsScreen({ density, role }) {
       if (g !== lmaxGrp) return false;
     }
     return true;
-  }), [search, prov, insp, lmaxGrp]);
+  }), [vessels, search, prov, insp, lmaxGrp]);
 
   const clearFilters = () => { setSearch(""); setProv("all"); setInsp("all"); setLmaxGrp("all"); };
 
@@ -215,7 +319,7 @@ export function VesselsScreen({ density, role }) {
           <div className="form-row">
             <label className="form-lbl">Tỉnh</label>
             <select className="input select" value={prov} onChange={e=>setProv(e.target.value)}>
-              <option value="all">Tất cả ({VESSELS.length})</option>
+              <option value="all">Tất cả ({vessels.length})</option>
               {PROVINCES.map(p=>(<option key={p.code} value={p.code}>{p.name}</option>))}
             </select>
           </div>
@@ -248,7 +352,7 @@ export function VesselsScreen({ density, role }) {
       </Card>
 
       <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12, fontSize:13, color:"var(--text-soft)"}}>
-        <div>Hiển thị <b style={{color:"var(--text-strong)"}}>{filtered.length}</b> / {VESSELS.length} kết quả</div>
+        <div>Hiển thị <b style={{color:"var(--text-strong)"}}>{filtered.length}</b> / {vessels.length} kết quả</div>
         <div>20 bản ghi / trang</div>
       </div>
 
