@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 """Batch Processor - Xử lý song song nhiều file DOCX và lưu vào DB."""
 import concurrent.futures
 from pathlib import Path
@@ -94,3 +95,108 @@ def run_batch_processor_api(file_paths: List[Path], db: Session, max_threads: in
                     file_data['error_msg'] = f"Lỗi Cơ sở dữ liệu: {str(db_err)}"
                     
     return results
+=======
+"""Batch Processor - Xử lý song song nhiều file DOCX và lưu vào DB."""
+import concurrent.futures
+from pathlib import Path
+from typing import List, Dict, Any
+from sqlalchemy.orm import Session
+
+from app.services.docx_parser import parse_vessel_docx
+from app.models.vessel import VesselORM
+from app.services.data_processor import classify_length_group, get_province_name
+
+def process_single_file(args: tuple) -> Dict[str, Any]:
+    """Xử lý đơn lẻ từng file để phục vụ cho luồng chạy song song."""
+    file_path, original_name = args
+    if isinstance(file_path, str):
+        file_path = Path(file_path)
+        
+    try:
+        data = parse_vessel_docx(str(file_path))
+        result = data.model_dump()
+        result['file_name'] = original_name
+        result['status'] = 'Thành công'
+        result['error_msg'] = ''
+        return result
+    except Exception as e:
+        return {
+            'so_dang_ky': None,
+            'ma_tinh': 'UNK',
+            'lmax': 0.0,
+            'file_name': original_name,
+            'status': 'Lỗi',
+            'error_msg': str(e)
+        }
+
+from typing import List, Dict, Any, Tuple
+
+def save_vessel_data(db: Session, file_data: Dict[str, Any]) -> Tuple[VesselORM, bool]:
+    reg_no = file_data.get('so_dang_ky')
+    
+    existing_vessel = None
+    if reg_no:
+        existing_vessel = db.query(VesselORM).filter(
+            VesselORM.registration_number == reg_no
+        ).first()
+    
+    lmax_val = file_data.get('lmax', 0.0)
+    len_group = classify_length_group(lmax_val)
+    prov_code = file_data.get("ma_tinh", "UNK")
+    
+    vessel_attrs = {
+        "owner_name": file_data.get("ho_ten", ""),
+        "address": file_data.get("dia_chi", ""),
+        "province_code": prov_code,
+        "province_name": get_province_name(prov_code),
+        "lmax": lmax_val,
+        "power_kw": file_data.get("may_chinh", 0.0),
+        "material": file_data.get("vat_lieu", "Không xác định"),
+        "inspection_type": file_data.get("hinh_thuc_kiem_tra", "khong_xac_dinh"),
+        "length_group": len_group,
+        "valid_until": file_data.get("han_dk", ""),
+        "issued_date": file_data.get("ngay_cap", ""),
+        "fishing_gear": file_data.get("nghe", ""),
+    }
+    
+    if existing_vessel:
+        for k, v in vessel_attrs.items():
+            setattr(existing_vessel, k, v)
+        db.commit()
+        return existing_vessel, True
+    else:
+        new_vessel = VesselORM(
+            registration_number=reg_no,
+            **vessel_attrs
+        )
+        db.add(new_vessel)
+        db.commit()
+        return new_vessel, False
+
+def run_batch_processor_api(file_paths_with_names: List[tuple], db: Session, max_threads: int = 4) -> List[Dict[str, Any]]:
+    """
+    Xử lý hàng loạt các file docx tải lên từ giao diện web sử dụng ThreadPoolExecutor.
+    Ánh xạ dữ liệu trích xuất sang các trường tiếng Anh để cập nhật vào Database lớn.
+    """
+    results = []
+    
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_threads) as executor:
+        futures = {executor.submit(process_single_file, item): item for item in file_paths_with_names}
+        
+        for future in concurrent.futures.as_completed(futures):
+            file_data = future.result()
+            results.append(file_data)
+            
+            if file_data['status'] == 'Thành công':
+                try:
+                    result_vessel, is_dup = save_vessel_data(db, file_data)
+                    if is_dup:
+                        file_data['status'] = 'Trùng lặp'
+                        file_data['error_msg'] = 'Đã cập nhật dữ liệu mới đè lên bản ghi cũ'
+                except Exception as db_err:
+                    db.rollback()
+                    file_data['status'] = 'Lỗi lưu DB'
+                    file_data['error_msg'] = f"Lỗi Cơ sở dữ liệu: {str(db_err)}"
+                    
+    return results
+>>>>>>> Stashed changes

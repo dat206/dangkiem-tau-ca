@@ -1,4 +1,8 @@
 import os
+<<<<<<< Updated upstream
+=======
+from datetime import date
+>>>>>>> Stashed changes
 
 os.environ.setdefault("DATABASE_URL", "sqlite:///./test.db")
 
@@ -33,10 +37,17 @@ def test_save_vessel_data_inserts_and_updates_by_registration_number():
             "han_dk": "25/05/2027",
             "nghe": "Luoi keo",
             "ngay_cap": "25/05/2026",
+<<<<<<< Updated upstream
         }
 
         save_vessel_data(db, parsed_data)
         db.commit()
+=======
+            "file_name": "test.docx"
+        }
+
+        save_vessel_data(db, parsed_data)
+>>>>>>> Stashed changes
 
         vessel = (
             db.query(VesselORM)
@@ -48,7 +59,10 @@ def test_save_vessel_data_inserts_and_updates_by_registration_number():
 
         parsed_data["ho_ten"] = "Tran Van B"
         save_vessel_data(db, parsed_data)
+<<<<<<< Updated upstream
         db.commit()
+=======
+>>>>>>> Stashed changes
 
         vessels = (
             db.query(VesselORM)
@@ -115,6 +129,7 @@ def test_upload_batch_creates_report_history(monkeypatch):
 
     db = SessionLocal()
     try:
+<<<<<<< Updated upstream
         history = db.query(ReportHistoryORM).one()
         assert history.file_count == 1
         assert history.provinces == "QN"
@@ -122,6 +137,14 @@ def test_upload_batch_creates_report_history(monkeypatch):
         assert history.file_path is None
     finally:
         db.query(ReportHistoryORM).delete()
+=======
+        vessel = db.query(VesselORM).filter(
+            VesselORM.registration_number == "QN-90524-TS"
+        ).one()
+        assert vessel.owner_name == "Hoang Van C"
+        assert vessel.lmax == 18.5
+    finally:
+>>>>>>> Stashed changes
         db.query(VesselORM).filter(
             VesselORM.registration_number == "QN-90524-TS"
         ).delete()

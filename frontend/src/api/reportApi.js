@@ -6,6 +6,18 @@ const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8000')
 const API_URL = `${API_BASE}/api`;
 
 /**
+ * Lấy danh sách tàu.
+ */
+export const getVessels = async (params = {}) => {
+  const token = localStorage.getItem('token');
+  const response = await axios.get(`${API_URL}/vessels`, {
+    headers: { Authorization: `Bearer ${token}` },
+    params: params
+  });
+  return response.data;
+};
+
+/**
  * Lấy lịch sử xuất báo cáo.
  */
 export const getReportHistory = async (params) => {
@@ -123,9 +135,13 @@ export const reportApi = {
   },
   uploadBatchReports,
   getReportHistory,
+<<<<<<< Updated upstream
   getReportCreators,
   getExportOptions,
   generateReportFromDb,
+=======
+  getVessels,
+>>>>>>> Stashed changes
   downloadReportHistory,
   deleteReportHistory,
   generateReport,

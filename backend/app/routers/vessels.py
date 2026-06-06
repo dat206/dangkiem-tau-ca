@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 from datetime import date, datetime
 import csv
 from io import StringIO
@@ -375,4 +376,63 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
         "barData": bar_data,
         "pieData": pie_data,
         "recentUploads": recent_uploads,
+=======
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session
+from typing import List, Optional
+
+from app.database import get_db
+from app.models.vessel import VesselORM
+
+router = APIRouter(
+    prefix="/vessels",
+    tags=["vessels"]
+)
+
+@router.get("")
+def get_vessels(
+    skip: int = Query(0, description="Số bản ghi bỏ qua"),
+    limit: int = Query(100, description="Số bản ghi tối đa lấy về"),
+    province: Optional[str] = Query(None, description="Lọc theo mã tỉnh"),
+    q: Optional[str] = Query(None, description="Tìm kiếm theo tên hoặc số đăng ký"),
+    db: Session = Depends(get_db)
+):
+    query = db.query(VesselORM)
+    
+    if province and province != 'all':
+        query = query.filter(VesselORM.province_code == province)
+        
+    if q:
+        search_term = f"%{q}%"
+        query = query.filter(
+            (VesselORM.registration_number.ilike(search_term)) | 
+            (VesselORM.owner_name.ilike(search_term))
+        )
+        
+    total = query.count()
+    items = query.order_by(VesselORM.created_at.desc()).offset(skip).limit(limit).all()
+    
+    return {
+        "total": total,
+        "items": [
+            {
+                "id": item.id,
+                "registration_number": item.registration_number,
+                "owner_name": item.owner_name,
+                "address": item.address,
+                "province_code": item.province_code,
+                "province_name": item.province_name,
+                "lmax": item.lmax,
+                "power_kw": item.power_kw,
+                "material": item.material,
+                "inspection_type": item.inspection_type,
+                "length_group": item.length_group,
+                "valid_until": item.valid_until,
+                "issued_date": item.issued_date,
+                "fishing_gear": item.fishing_gear,
+                "created_at": item.created_at.isoformat() if item.created_at else None
+            }
+            for item in items
+        ]
+>>>>>>> Stashed changes
     }

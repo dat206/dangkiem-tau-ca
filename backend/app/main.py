@@ -2,7 +2,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .routers.report import router as report_router
+<<<<<<< Updated upstream
 from .routers.vessels import router as vessel_router
+=======
+from .routers.auth import router as auth_router
+from .routers.vessels import router as vessels_router
+>>>>>>> Stashed changes
 
 app = FastAPI(
     title="Fishing Vessel Report API",
@@ -49,6 +54,9 @@ async def generate_report_direct(
 ):
     return await generate_report(files=files, quarter=quarter, year=year, provinces=provinces, db=db)
 
+
+# Vessels routes: GET /api/vessels
+app.include_router(vessels_router, prefix="/api")
 
 # -- Root endpoints -----------------------------------------------------------
 @app.get("/")
