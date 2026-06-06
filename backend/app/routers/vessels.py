@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, extract
 from typing import List, Optional
+from datetime import datetime
 from app.database import get_db
 from app.models.vessel import VesselORM
 
@@ -79,6 +80,13 @@ def get_vessels(
 def get_dashboard_stats(db: Session = Depends(get_db)):
     total_vessels = db.query(VesselORM).count()
     
+    # Đếm số lượng upload trong tháng hiện tại
+    now = datetime.now()
+    uploads_this_month = db.query(VesselORM).filter(
+        extract('month', VesselORM.created_at) == now.month,
+        extract('year', VesselORM.created_at) == now.year
+    ).count()
+    
     # Số tàu theo tỉnh (Top 6)
     prov_stats = db.query(
         VesselORM.province_code, 
@@ -114,7 +122,7 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
     return {
         "stats": [
             { "label": "Tổng tàu trong DB", "value": str(total_vessels), "subtitle": "Toàn bộ dữ liệu", "trend": "up" },
-            { "label": "Upload tháng này", "value": str(len(recent)), "subtitle": "Mới cập nhật", "trend": "up" },
+            { "label": "Upload tháng này", "value": str(uploads_this_month), "subtitle": "Mới cập nhật", "trend": "up" },
             { "label": "Báo cáo đã xuất", "value": "0", "subtitle": "Trong quý này", "trend": "up" }
         ],
         "barData": bar_data,

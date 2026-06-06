@@ -20,26 +20,26 @@ router = APIRouter(
 )
 
 COASTAL_PROVINCES = [
-    {"code": "QN", "name": "Quáº£ng Ninh"},
-    {"code": "HP", "name": "Háº£i PhÃ²ng"},
-    {"code": "TB", "name": "ThÃ¡i BÃ¬nh"},
-    {"code": "ND", "name": "Nam Äá»‹nh"},
-    {"code": "TH", "name": "Thanh HÃ³a"},
-    {"code": "NA", "name": "Nghá»‡ An"},
-    {"code": "HT", "name": "HÃ  TÄ©nh"},
-    {"code": "QB", "name": "Quáº£ng BÃ¬nh"},
-    {"code": "QT", "name": "Quáº£ng Trá»‹"},
-    {"code": "DN", "name": "ÄÃ  Náºµng"},
-    {"code": "QNG", "name": "Quáº£ng NgÃ£i"},
-    {"code": "BDI", "name": "BÃ¬nh Äá»‹nh"},
-    {"code": "KH", "name": "KhÃ¡nh HÃ²a"},
-    {"code": "NT", "name": "Ninh Thuáº­n"},
-    {"code": "BT", "name": "BÃ¬nh Thuáº­n"},
+    {"code": "QN", "name": "Quảng Ninh"},
+    {"code": "HP", "name": "Hải Phòng"},
+    {"code": "TB", "name": "Thái Bình"},
+    {"code": "ND", "name": "Nam Định"},
+    {"code": "TH", "name": "Thanh Hóa"},
+    {"code": "NA", "name": "Nghệ An"},
+    {"code": "HT", "name": "Hà Tĩnh"},
+    {"code": "QB", "name": "Quảng Bình"},
+    {"code": "QT", "name": "Quảng Trị"},
+    {"code": "DN", "name": "Đà Nẵng"},
+    {"code": "QNG", "name": "Quảng Ngãi"},
+    {"code": "BDI", "name": "Bình Định"},
+    {"code": "KH", "name": "Khánh Hòa"},
+    {"code": "NT", "name": "Ninh Thuận"},
+    {"code": "BT", "name": "Bình Thuận"},
 ]
 
 FILE_TYPE_NAMES = {
-    "registry": "Báº£ng kÃª tá»•ng há»£p",
-    "summary": "BÃ¡o cÃ¡o quÃ½ theo tá»‰nh",
+    "registry": "Bảng kê tổng hợp",
+    "summary": "Báo cáo quý theo tỉnh",
 }
 
 
@@ -81,7 +81,7 @@ def _normalize_province_code(code: str | None) -> str:
     if not code:
         return ""
     normalized = code.strip().upper()
-    aliases = {"NÄ": "ND", "ÄN": "DN", "BÄ": "BDI", "QNI": "QNG"}
+    aliases = {"NĐ": "ND", "ĐN": "DN", "BĐ": "BDI", "QNI": "QNG"}
     return aliases.get(normalized, normalized)
 
 

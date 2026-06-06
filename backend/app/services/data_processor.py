@@ -38,7 +38,7 @@ def get_province_name(code: str) -> str:
     Returns the *code* itself if no mapping is found.
     """
     # Xử lý QNg đặc biệt
-    search_code = "QNg" if code.upper() == "QNG" else code.upper().replace('Đ', 'Đ')
+    search_code = "QNg" if code and code.upper() in ["QNG", "QNGAI"] else code
     return PROVINCE_MAP.get(search_code, code)
 
 
