@@ -4,6 +4,7 @@ Extracts structured vessel data from the standardised DOCX format
 used for Vietnamese fishing vessel safety certificates.
 """
 
+import os
 import re
 from datetime import date
 from typing import Optional
@@ -12,6 +13,13 @@ from docx import Document
 from pydantic import ValidationError
 
 from app.models.vessel import VesselData
+
+__all__ = [
+    "ParseError",
+    "VesselData",
+    "parse_vessel_docx",
+    "extract_owner_name",
+]
 
 
 class ParseError(Exception):
@@ -137,6 +145,13 @@ def _build_full_text(doc) -> str:
     return " | ".join(blocks)
 
 
+def normalize_province_code(code: str) -> str:
+    """Normalize province code to match VesselData validator rules."""
+    if code.upper() == "QNG":
+        return "QNg"
+    return code.upper()
+
+
 def format_address_short(dia_chi: str, ma_tinh: str) -> str:
     """Create short address format like 'NA, Diễn Châu'"""
     if not dia_chi:
@@ -202,7 +217,7 @@ def parse_vessel_docx(file_path: str) -> VesselData:
         reg_match = reg_pattern.search(full_text)
         
     if reg_match:
-        ma_tinh = reg_match.group(1).strip()
+        ma_tinh = normalize_province_code(reg_match.group(1).strip())
         num_part = reg_match.group(2).strip()
         if re.search(r"\d", num_part):
             so_dang_ky = f"{ma_tinh}-{num_part}-TS".upper()
@@ -231,7 +246,7 @@ def parse_vessel_docx(file_path: str) -> VesselData:
                 raw = raw[9:].strip(": \t")
             dia_chi = raw
             
-    address_short = format_address_short(dia_chi, ma_tinh.upper().replace('Đ', 'Đ'))
+    address_short = format_address_short(dia_chi, ma_tinh)
 
     # 5. Technical specs
     nghe = ""
@@ -338,8 +353,10 @@ def parse_vessel_docx(file_path: str) -> VesselData:
     if not ngay_kt:
         ngay_kt = ngay_cap or date.today()
 
+    if lmax <= 0:
+        raise ParseError("Không trích xuất được chiều dài Lmax từ file DOCX")
+
     try:
-        import os
         return VesselData(
             registration_no=so_dang_ky,
             province_code=ma_tinh,

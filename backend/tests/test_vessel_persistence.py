@@ -1,4 +1,5 @@
 import os
+from datetime import date
 
 os.environ.setdefault("DATABASE_URL", "sqlite:///./test.db")
 
@@ -6,82 +7,28 @@ from fastapi.testclient import TestClient  # noqa: E402
 
 from app.database import Base, SessionLocal, engine  # noqa: E402
 from app.main import app  # noqa: E402
-from app.models.vessel import ReportHistoryORM, VesselORM  # noqa: E402
+from app.models.vessel import VesselORM  # noqa: E402
 from app.services.docx_parser import VesselData  # noqa: E402
-from app.services.batch_processor import save_vessel_data  # noqa: E402
 
 
-def test_save_vessel_data_inserts_and_updates_by_registration_number():
-    Base.metadata.create_all(bind=engine)
-
-    db = SessionLocal()
-    try:
-        db.query(VesselORM).filter(
-            VesselORM.registration_number == "QN-90523-TS"
-        ).delete()
-        db.commit()
-
-        parsed_data = {
-            "so_dang_ky": "QN-90523-TS",
-            "ma_tinh": "QN",
-            "lmax": 21.5,
-            "hinh_thuc_kiem_tra": "Định kỳ",
-            "ho_ten": "Nguyen Van A",
-            "dia_chi": "Quang Ninh",
-            "may_chinh": 450.0,
-            "vat_lieu": "Gỗ",
-            "han_dk": "25/05/2027",
-            "nghe": "Luoi keo",
-            "ngay_cap": "25/05/2026",
-        }
-
-        save_vessel_data(db, parsed_data)
-        db.commit()
-
-        vessel = (
-            db.query(VesselORM)
-            .filter(VesselORM.registration_number == "QN-90523-TS")
-            .one()
-        )
-        assert vessel.owner_name == "Nguyen Van A"
-        assert vessel.length_group == "20-24m"
-
-        parsed_data["ho_ten"] = "Tran Van B"
-        save_vessel_data(db, parsed_data)
-        db.commit()
-
-        vessels = (
-            db.query(VesselORM)
-            .filter(VesselORM.registration_number == "QN-90523-TS")
-            .all()
-        )
-        assert len(vessels) == 1
-        assert vessels[0].owner_name == "Tran Van B"
-    finally:
-        db.query(VesselORM).filter(
-            VesselORM.registration_number == "QN-90523-TS"
-        ).delete()
-        db.commit()
-        db.close()
-
-
-def test_upload_batch_creates_report_history(monkeypatch):
+def test_upload_batch_processes_mock_docx(monkeypatch):
     Base.metadata.create_all(bind=engine)
 
     def fake_parse_vessel_docx(_file_path):
         return VesselData(
-            so_dang_ky="QN-90524-TS",
-            ma_tinh="QN",
+            registration_no="QN-90524-TS",
+            province_code="QN",
             lmax=18.5,
-            hinh_thuc_kiem_tra="Hàng năm",
-            cap_tau="Hạn chế II",
-            ho_ten="Hoang Van C",
-            dia_chi="Quang Ninh",
-            may_chinh=250.0,
-            vat_lieu="Gỗ",
-            han_dk="25/05/2027",
-            nghe="Luoi re",
-            ngay_cap="25/05/2026",
+            inspection_type="hang_nam",
+            vessel_class="han_che_2",
+            owner_name="Hoang Van C",
+            address="Quang Ninh",
+            power_kw=250.0,
+            material="Gỗ",
+            valid_until=date(2027, 5, 25),
+            issued_date=date(2026, 5, 25),
+            inspection_date=date(2026, 5, 25),
+            fishing_gear="Luoi re",
         )
 
     monkeypatch.setattr(
@@ -91,9 +38,8 @@ def test_upload_batch_creates_report_history(monkeypatch):
 
     db = SessionLocal()
     try:
-        db.query(ReportHistoryORM).delete()
         db.query(VesselORM).filter(
-            VesselORM.registration_number == "QN-90524-TS"
+            VesselORM.registration_no == "QN-90524-TS"
         ).delete()
         db.commit()
     finally:
@@ -112,18 +58,23 @@ def test_upload_batch_creates_report_history(monkeypatch):
     )
 
     assert response.status_code == 200
+    payload = response.json()
+    assert payload["total"] == 1
+    assert payload["success"] == 1
+    assert payload["failed"] == 0
 
     db = SessionLocal()
     try:
-        history = db.query(ReportHistoryORM).one()
-        assert history.file_count == 1
-        assert history.provinces == "QN"
-        assert history.status == "success"
-        assert history.file_path is None
+        vessel = (
+            db.query(VesselORM)
+            .filter(VesselORM.registration_no == "QN-90524-TS")
+            .one()
+        )
+        assert vessel.owner_name == "Hoang Van C"
+        assert vessel.inspection_type == "hang_nam"
     finally:
-        db.query(ReportHistoryORM).delete()
         db.query(VesselORM).filter(
-            VesselORM.registration_number == "QN-90524-TS"
+            VesselORM.registration_no == "QN-90524-TS"
         ).delete()
         db.commit()
         db.close()

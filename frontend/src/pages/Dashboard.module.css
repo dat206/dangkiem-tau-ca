@@ -6,7 +6,7 @@
 
 .statsGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 24px;
 }
 
@@ -71,6 +71,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
+  color: var(--text-muted);
 }
 
 .trendUp {
@@ -90,6 +91,29 @@
 .chartContainer {
   height: 300px;
   width: 100%;
+}
+
+.emptyChart {
+  height: 100%;
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 14px;
+  background: var(--surface-hover);
+  border-radius: var(--radius-md);
+}
+
+.stateText {
+  padding: 24px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.viewAllLink {
+  font-size: 14px;
+  font-weight: 600;
 }
 
 @media (max-width: 1024px) {

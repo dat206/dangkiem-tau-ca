@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8000')
+  .replace(/\/api\/?$/, '')
+  .replace(/\/$/, '');
+const API_URL = `${API_BASE}/api`;
 
 /**
  * Lấy lịch sử xuất báo cáo.
@@ -69,7 +72,7 @@ export const generateReport = async (files, config) => {
     : config.provinces;
   formData.append("provinces", provinceStr);
 
-  const response = await axios.post(`${API_URL}/generate-report`, formData, {
+  const response = await axios.post(`${API_URL}/reports/generate-report`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
     },
