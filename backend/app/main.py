@@ -15,7 +15,12 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
+        "http://127.0.0.1:5173",
         "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost",
+        "http://127.0.0.1",
+        "null",  # file:// origin khi mở trực tiếp HTML
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -23,6 +28,8 @@ app.add_middleware(
 )
 
 # -- Routers ------------------------------------------------------------------
+# Tất cả route reports được đăng ký qua report_router với prefix /api/reports
+# Ví dụ: POST /api/reports/generate-report, POST /api/reports/upload-batch
 app.include_router(report_router, prefix="/api")
 app.include_router(vessel_router, prefix="/api")
 
