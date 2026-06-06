@@ -1,4 +1,4 @@
-﻿
+
 import tempfile
 import zipfile
 from datetime import date, datetime, timedelta
@@ -356,13 +356,8 @@ async def upload_vessel_documents(
             )
         
         from app.services.batch_processor import run_batch_processor_api
-<<<<<<< Updated upstream
-        processing_results = run_batch_processor_api(file_paths=saved_temp_paths, db=db, max_threads=4)
-        success_count = sum(1 for item in processing_results if item['status'] == 'ThÃ nh cÃ´ng')
-=======
         processing_results = run_batch_processor_api(file_paths_with_names=saved_temp_paths, db=db, max_threads=4)
         success_count = sum(1 for item in processing_results if item['status'] == 'Thành công')
->>>>>>> Stashed changes
         
         return {
             "message": f"Xá»­ lÃ½ hoÃ n táº¥t {len(processing_results)} file tÃ i liá»‡u.",
@@ -404,14 +399,14 @@ async def generate_report(
         
     saved_temp_paths = []
     try:
-        # 1. LÆ°u cÃ¡c file upload táº¡m thá»i
+        # 1. LÆ°u cÃ¡c file upload táº¡m thá» i
         for file in files:
             if not file.filename.endswith('.docx'):
                 continue
             with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
                 content = await file.read()
                 tmp.write(content)
-                saved_temp_paths.append(Path(tmp.name))
+                saved_temp_paths.append((Path(tmp.name), file.filename))
                 
         if not saved_temp_paths:
             raise HTTPException(
@@ -419,36 +414,12 @@ async def generate_report(
                 detail="KhÃ´ng cÃ³ file Word Ä‘á»‹nh dáº¡ng .docx há»£p lá»‡ nÃ o Ä‘Æ°á»£c táº£i lÃªn."
             )
             
-        # 2. PhÃ¢n tÃ­ch cÃ¡c file vÃ  lÆ°u thÃ´ng tin vÃ o CSDL
+        # 2. Phân tích các file và lưu thông tin vào CSDL
         from app.services.batch_processor import run_batch_processor_api
-        results = run_batch_processor_api(file_paths=saved_temp_paths, db=db, max_threads=4)
-        success_count = sum(1 for item in results if item['status'] == 'ThÃ nh cÃ´ng')
+        results = run_batch_processor_api(file_paths_with_names=saved_temp_paths, db=db, max_threads=4)
+        success_count = sum(1 for item in results if item['status'] == 'Thành công')
                 
-<<<<<<< Updated upstream
         if success_count == 0:
-=======
-                from app.services.batch_processor import save_vessel_data
-                saved_vessel, _ = save_vessel_data(db, vessel_dict)
-                
-                # Danh sách dữ liệu cho Bảng kê tổng hợp
-                parsed_vessel_list_for_excel.append({
-                    "registration_no": saved_vessel.registration_number,
-                    "owner": saved_vessel.owner_name,
-                    "lmax": saved_vessel.lmax,
-                    "engine_power": saved_vessel.power_kw
-                })
-                
-                vessel_records.append({
-                    "ma_tinh": saved_vessel.province_code,
-                    "lmax": saved_vessel.lmax,
-                    "vat_lieu": saved_vessel.material,
-                    "hinh_thuc_kiem_tra": saved_vessel.inspection_type
-                })
-            except Exception as parse_err:
-                print(f"Lỗi khi xử lý file {orig_name}: {parse_err}")
-                
-        if not vessel_records:
->>>>>>> Stashed changes
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Táº¥t cáº£ cÃ¡c file táº£i lÃªn Ä‘á»u trÃ­ch xuáº¥t lá»—i."
@@ -515,6 +486,7 @@ async def generate_report(
             detail=f"Lá»—i táº¡o bÃ¡o cÃ¡o: {str(e)}"
         )
     finally:
-        for path in saved_temp_paths:
+        for item in saved_temp_paths:
+            path = item[0] if isinstance(item, tuple) else item
             if path.exists():
                 path.unlink()

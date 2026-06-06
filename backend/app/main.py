@@ -2,12 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .routers.report import router as report_router
-<<<<<<< Updated upstream
-from .routers.vessels import router as vessel_router
-=======
 from .routers.auth import router as auth_router
 from .routers.vessels import router as vessels_router
->>>>>>> Stashed changes
 
 app = FastAPI(
     title="Fishing Vessel Report API",
@@ -36,7 +32,7 @@ app.add_middleware(
 # Tất cả route reports được đăng ký qua report_router với prefix /api/reports
 # Ví dụ: POST /api/reports/generate-report, POST /api/reports/upload-batch
 app.include_router(report_router, prefix="/api")
-app.include_router(vessel_router, prefix="/api")
+app.include_router(auth_router, prefix="/api")
 
 # -- Direct API alias for generate-report to match API.md specification -------
 from fastapi import UploadFile, File, Form, Depends

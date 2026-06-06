@@ -1,4 +1,3 @@
-<<<<<<< Updated upstream
 from datetime import date, datetime
 import csv
 from io import StringIO
@@ -131,11 +130,15 @@ def _apply_vessel_filters(
 def _serialize_vessel(item: VesselORM) -> dict:
     return {
         "id": item.id,
+        "registration_number": item.registration_no or "",
         "reg": item.registration_no or "",
+        "owner_name": item.owner_name or "",
         "owner": item.owner_name or "",
         "address": item.address or "",
         "address_short": item.address_short or "",
+        "province_code": item.province_code or "",
         "prov": item.province_code or "",
+        "province_name": "",
         "lmax": item.lmax,
         "power_kw": item.power_kw,
         "material": item.material or "",
@@ -144,9 +147,11 @@ def _serialize_vessel(item: VesselORM) -> dict:
         "length_group": item.length_group or "",
         "length_label": LENGTH_LABELS.get(item.length_group, item.length_group or ""),
         "date": _format_date(item.inspection_date),
+        "valid_until": item.valid_until,
         "expire": _format_date(item.valid_until),
         "issued_date": _format_date(item.issued_date),
         "job": item.fishing_gear or "",
+        "fishing_gear": item.fishing_gear or "",
         "source_filename": item.source_filename or "",
         "created_at": _format_datetime(item.created_at),
     }
@@ -271,12 +276,19 @@ def export_vessels_csv(
 def get_vessels(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=500),
+    q: Optional[str] = None,
+    province: Optional[str] = None,
     search: Optional[str] = None,
     province_code: Optional[str] = None,
     inspection_type: Optional[str] = None,
     length_group: Optional[str] = None,
     db: Session = Depends(get_db),
 ):
+    if q and not search:
+        search = q
+    if province and province != 'all' and not province_code:
+        province_code = province
+
     query = _apply_vessel_filters(
         db.query(VesselORM),
         search=search,
@@ -376,63 +388,4 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
         "barData": bar_data,
         "pieData": pie_data,
         "recentUploads": recent_uploads,
-=======
-from fastapi import APIRouter, Depends, Query
-from sqlalchemy.orm import Session
-from typing import List, Optional
-
-from app.database import get_db
-from app.models.vessel import VesselORM
-
-router = APIRouter(
-    prefix="/vessels",
-    tags=["vessels"]
-)
-
-@router.get("")
-def get_vessels(
-    skip: int = Query(0, description="Số bản ghi bỏ qua"),
-    limit: int = Query(100, description="Số bản ghi tối đa lấy về"),
-    province: Optional[str] = Query(None, description="Lọc theo mã tỉnh"),
-    q: Optional[str] = Query(None, description="Tìm kiếm theo tên hoặc số đăng ký"),
-    db: Session = Depends(get_db)
-):
-    query = db.query(VesselORM)
-    
-    if province and province != 'all':
-        query = query.filter(VesselORM.province_code == province)
-        
-    if q:
-        search_term = f"%{q}%"
-        query = query.filter(
-            (VesselORM.registration_number.ilike(search_term)) | 
-            (VesselORM.owner_name.ilike(search_term))
-        )
-        
-    total = query.count()
-    items = query.order_by(VesselORM.created_at.desc()).offset(skip).limit(limit).all()
-    
-    return {
-        "total": total,
-        "items": [
-            {
-                "id": item.id,
-                "registration_number": item.registration_number,
-                "owner_name": item.owner_name,
-                "address": item.address,
-                "province_code": item.province_code,
-                "province_name": item.province_name,
-                "lmax": item.lmax,
-                "power_kw": item.power_kw,
-                "material": item.material,
-                "inspection_type": item.inspection_type,
-                "length_group": item.length_group,
-                "valid_until": item.valid_until,
-                "issued_date": item.issued_date,
-                "fishing_gear": item.fishing_gear,
-                "created_at": item.created_at.isoformat() if item.created_at else None
-            }
-            for item in items
-        ]
->>>>>>> Stashed changes
     }
