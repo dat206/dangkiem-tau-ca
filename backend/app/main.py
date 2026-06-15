@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -12,17 +13,27 @@ app = FastAPI(
 )
 
 # -- CORS middleware ----------------------------------------------------------
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "")
+extra_origins = [origin.strip() for origin in allowed_origins_env.split(",") if origin.strip()]
+
+origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost",
+    "http://127.0.0.1",
+    "null",  # file:// origin khi mở trực tiếp HTML
+    "https://dangkiem-tau-ca-murex.vercel.app",  # Frontend URL của Vercel
+]
+
+for origin in extra_origins:
+    if origin not in origins:
+        origins.append(origin)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost",
-        "http://127.0.0.1",
-        "null",  # file:// origin khi mở trực tiếp HTML
-    ],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
