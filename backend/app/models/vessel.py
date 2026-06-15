@@ -111,34 +111,34 @@ class ReportHistoryItem(BaseModel):
 
 
 class VesselORM(Base):
-    """Database model for vessels."""
+    """Database model for vessels (mapped to vessel_inspections table after migration 0003)."""
 
     __tablename__ = "vessel_inspections"
 
     id = Column(Integer, primary_key=True, index=True)
-    registration_no = Column(String(25), nullable=True, index=True)
-    province_code = Column(String(10), nullable=False, index=True)
-    owner_name = Column(String(120))
-    address = Column(String(250))
+    # registration_no: đã rename từ registration_number trong migration 0003
+    registration_no = Column(String(50), nullable=True, index=True)
+    province_code = Column(String(10), nullable=True, index=True)
+    owner_name = Column(String(255))
+    address = Column(String(255))
     address_short = Column(String(60))
-    fishing_gear = Column(String(80))
+    fishing_gear = Column(String(255))
     material = Column(String(20))
     lmax = Column(Float)
     power_kw = Column(Float)
-    inspection_type = Column(String(20), nullable=False)
-    length_group = Column(String(20), nullable=False)
+    inspection_type = Column(String(50), nullable=True)
+    length_group = Column(String(20), nullable=True)
     vessel_class = Column(String(20))
-    
-    inspection_date = Column(Date, nullable=False, index=True)
+
+    # Các cột date – inspection_date được thêm trong migration 0003
+    inspection_date = Column(Date, nullable=True, index=True)
     valid_until = Column(Date)
     issued_date = Column(Date)
-    
+
     source_filename = Column(String(255))
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    # Note: DB requires unique registration_no + inspection_date for upserts
-    # If registration_no is NULL, we might skip upsert and just insert, 
-    # but postgres allows multiple nulls in unique constraints.
+    # UNIQUE(registration_no, inspection_date) – PostgreSQL cho phép nhiều NULL
     __table_args__ = (
         UniqueConstraint('registration_no', 'inspection_date', name='uq_vessel_inspection'),
     )
