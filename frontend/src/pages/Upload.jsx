@@ -64,8 +64,9 @@ const Upload = () => {
       formData.append('files', file);
     });
 
+    const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
     try {
-      const response = await fetch('http://localhost:8000/api/reports/upload-batch', {
+      const response = await fetch(`${API_BASE}/reports/upload-batch`, {
         method: 'POST',
         body: formData,
       });
