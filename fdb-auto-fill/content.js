@@ -1,6 +1,6 @@
 (function () {
   const DEFAULT_SETTINGS = {
-    apiBaseUrl: "http://localhost:8000/api",
+    apiBaseUrl: "https://dangkiem-tau-ca.onrender.com/api",
     apiKey: ""
   };
 
@@ -542,6 +542,17 @@
 
   function normalizeBaseUrl(value) {
     return value.trim().replace(/\/+$/, "");
+  }
+
+  function escapeHtml(unsafe) {
+    if (unsafe === null || unsafe === undefined) return "";
+    return unsafe
+      .toString()
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 
   function setStatus(message, type) {

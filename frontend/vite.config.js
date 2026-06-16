@@ -10,7 +10,7 @@ export default defineConfig({
     // Cấu hình Proxy để gọi API backend mà không bị lỗi CORS
     proxy: {
       '/api': {
-        target: 'http://localhost:8000', // Forward các request bắt đầu bằng /api sang Backend
+        target: 'https://dangkiem-tau-ca.onrender.com', // Forward các request bắt đầu bằng /api sang Backend
         changeOrigin: true,
       },
     },
