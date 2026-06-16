@@ -1,5 +1,5 @@
 const DEFAULT_SETTINGS = {
-  apiBaseUrl: "http://localhost:8000/api",
+  apiBaseUrl: "https://dangkiem-tau-ca.onrender.com/api",
   apiKey: ""
 };
 
@@ -62,7 +62,7 @@ function isAllowedApiUrl(value) {
   try {
     const url = new URL(value);
     const isLocalhost = url.hostname === "localhost" || url.hostname === "127.0.0.1";
-    return isLocalhost || url.hostname.endsWith("tongcucthuysan.gov.vn");
+    return isLocalhost || url.hostname.endsWith("tongcucthuysan.gov.vn") || url.hostname.endsWith("onrender.com");
   } catch {
     return false;
   }
