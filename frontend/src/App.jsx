@@ -1,6 +1,7 @@
 
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
+import PrivateRoute from './components/PrivateRoute';
 
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -15,9 +16,18 @@ function App() {
   return (
     <HashRouter>
       <Routes>
+        {/* Public route */}
         <Route path="/login" element={<Login />} />
 
-        <Route path="/" element={<MainLayout />}>
+        {/* Protected routes */}
+        <Route
+          path="/"
+          element={
+            <PrivateRoute>
+              <MainLayout />
+            </PrivateRoute>
+          }
+        >
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="upload" element={<Upload />} />
@@ -27,6 +37,9 @@ function App() {
           <Route path="admin/users" element={<AdminUsers />} />
           <Route path="admin/settings" element={<AdminSettings />} />
         </Route>
+
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </HashRouter>
   );
