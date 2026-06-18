@@ -35,7 +35,7 @@ def seed_admin():
             return
 
         admin = UserORM(
-            full_name="Quản trị viên",
+            full_name="Hồ Tuấn Minh",
             email=admin_email,
             hashed_password=hash_password("Admin@123"),
             role=UserRoleEnum.ADMIN.value,

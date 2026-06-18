@@ -84,15 +84,15 @@ export const INSP_TOTALS = [
 export const QUARTERS = ["I", "II", "III", "IV"];
 
 export const REPORT_HISTORY = [
-  { id: 5, quarter: "II",  year: 2026, createdAt: "21/05/2026 · 14:08", author: "Nguyễn Thị Bình", provs: ["QN","HP","TH"],          recs: 142, files: 2 },
-  { id: 4, quarter: "I",   year: 2026, createdAt: "15/04/2026 · 09:32", author: "Nguyễn Thị Bình", provs: ["QN","HP","HT"],          recs: 139, files: 2 },
+  { id: 5, quarter: "II",  year: 2026, createdAt: "21/05/2026 · 14:08", author: "Hồ Tuấn Minh", provs: ["QN","HP","TH"],          recs: 142, files: 2 },
+  { id: 4, quarter: "I",   year: 2026, createdAt: "15/04/2026 · 09:32", author: "Hồ Tuấn Minh", provs: ["QN","HP","HT"],          recs: 139, files: 2 },
   { id: 3, quarter: "I",   year: 2026, createdAt: "12/04/2026 · 11:20", author: "Trần Văn Hải",     provs: ["BĐ","KH","BT"],          recs:  87, files: 1 },
-  { id: 2, quarter: "IV",  year: 2025, createdAt: "10/01/2026 · 16:45", author: "Nguyễn Thị Bình", provs: ["QN","HP","TH","NĐ","TB"],recs: 198, files: 2 },
+  { id: 2, quarter: "IV",  year: 2025, createdAt: "10/01/2026 · 16:45", author: "Hồ Tuấn Minh", provs: ["QN","HP","TH","NĐ","TB"],recs: 198, files: 2 },
   { id: 1, quarter: "III", year: 2025, createdAt: "05/10/2025 · 10:11", author: "Trần Văn Hải",     provs: ["ĐN","QNg","BĐ"],          recs:  76, files: 2 },
 ];
 
 export const USERS = [
-  { name: "Nguyễn Thị Bình",  email: "binh.nt@danhgiem.gov.vn",  role: "admin",  lastLogin: "Hôm nay · 09:12",   status: "active" },
+  { name: "Hồ Tuấn Minh",  email: "minh.ht@dangkiem.gov.vn",  role: "admin",  lastLogin: "Hôm nay · 09:12",   status: "active" },
   { name: "Trần Văn Hải",      email: "hai.tv@danhgiem.gov.vn",   role: "staff",  lastLogin: "Hôm nay · 08:45",   status: "active" },
   { name: "Phạm Thị Lan",      email: "lan.pt@danhgiem.gov.vn",   role: "staff",  lastLogin: "Hôm qua · 17:22",   status: "active" },
   { name: "Lê Quốc Đạt",       email: "dat.lq@danhgiem.gov.vn",   role: "staff",  lastLogin: "20/05/2026 · 14:08", status: "active" },

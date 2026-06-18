@@ -10,7 +10,7 @@ db = SessionLocal()
 admin_email = "admin@dangkiem.gov.vn"
 if not db.query(UserORM).filter(UserORM.email == admin_email).first():
     db.add(UserORM(
-        full_name="Quản trị viên",
+        full_name="Hồ Tuấn Minh",
         email=admin_email,
         hashed_password=hashlib.sha256(b"admin123").hexdigest(),
         role="admin",
