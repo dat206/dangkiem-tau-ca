@@ -18,9 +18,9 @@ app.add_middleware(
 )
 # ----------------------------------------------
 
-app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
-app.include_router(report.router, prefix="/api/reports", tags=["reports"])
-app.include_router(vessels.router, prefix="/api/vessels", tags=["vessels"])
+app.include_router(auth.router, prefix="/api", tags=["auth"])
+app.include_router(report.router, prefix="/api", tags=["reports"])
+app.include_router(vessels.router, prefix="/api", tags=["vessels"])
 
 @app.get("/")
 def read_root():
