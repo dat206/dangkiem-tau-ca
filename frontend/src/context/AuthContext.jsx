@@ -104,16 +104,29 @@ export function AuthProvider({ children }) {
       return;
     }
 
+    const checkIdle = () => {
+      const lastActivity = localStorage.getItem('last_activity') || sessionStorage.getItem('last_activity');
+      if (lastActivity) {
+        const elapsed = Date.now() - parseInt(lastActivity, 10);
+        if (elapsed >= IDLE_TIMEOUT_MS) {
+          logout();
+        } else {
+          // Người dùng hoạt động ở tab khác -> Thiết lập timer cho thời gian còn lại
+          if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+          idleTimerRef.current = setTimeout(checkIdle, IDLE_TIMEOUT_MS - elapsed);
+        }
+      } else {
+        logout();
+      }
+    };
+
     const resetTimer = () => {
       const nowStr = Date.now().toString();
       localStorage.setItem('last_activity', nowStr);
       sessionStorage.setItem('last_activity', nowStr);
 
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-
-      idleTimerRef.current = setTimeout(() => {
-        logout();
-      }, IDLE_TIMEOUT_MS);
+      idleTimerRef.current = setTimeout(checkIdle, IDLE_TIMEOUT_MS);
     };
 
     // Các sự kiện tương tác của người dùng

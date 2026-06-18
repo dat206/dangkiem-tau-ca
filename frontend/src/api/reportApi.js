@@ -9,9 +9,9 @@ const API_URL = `${API_BASE}/api`;
  * Lấy danh sách tàu.
  */
 export const getVessels = async (params = {}) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
   const response = await axios.get(`${API_URL}/vessels`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
     params: params
   });
   return response.data;
