@@ -28,7 +28,8 @@ def create_or_reset_admin():
         existing = db.query(UserORM).filter(UserORM.email == admin_email).first()
 
         if existing:
-            # Reset password
+            # Reset password and name
+            existing.full_name = "Hồ Tuấn Minh"
             existing.hashed_password = hash_password(admin_password)
             existing.is_active = True
             existing.role = UserRoleEnum.ADMIN.value
@@ -41,7 +42,7 @@ def create_or_reset_admin():
             print(f"   Role: {existing.role}")
         else:
             admin = UserORM(
-                full_name="Quản trị viên",
+                full_name="Hồ Tuấn Minh",
                 email=admin_email,
                 hashed_password=hash_password(admin_password),
                 role=UserRoleEnum.ADMIN.value,
