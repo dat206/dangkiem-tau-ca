@@ -34,7 +34,6 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const saved = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
     if (!saved) {
-      setLoading(false);
       return;
     }
 
@@ -50,7 +49,7 @@ export function AuthProvider({ children }) {
         sessionStorage.removeItem('auth_token');
         sessionStorage.removeItem('auth_user');
         sessionStorage.removeItem('last_activity');
-        setLoading(false);
+        setTimeout(() => setLoading(false), 0);
         return;
       }
     }
