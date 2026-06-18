@@ -34,7 +34,6 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const saved = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
     if (!saved) {
-      setLoading(false);
       return;
     }
 
@@ -50,7 +49,7 @@ export function AuthProvider({ children }) {
         sessionStorage.removeItem('auth_token');
         sessionStorage.removeItem('auth_user');
         sessionStorage.removeItem('last_activity');
-        setLoading(false);
+        setTimeout(() => setLoading(false), 0);
         return;
       }
     }
@@ -104,16 +103,29 @@ export function AuthProvider({ children }) {
       return;
     }
 
+    const checkIdle = () => {
+      const lastActivity = localStorage.getItem('last_activity') || sessionStorage.getItem('last_activity');
+      if (lastActivity) {
+        const elapsed = Date.now() - parseInt(lastActivity, 10);
+        if (elapsed >= IDLE_TIMEOUT_MS) {
+          logout();
+        } else {
+          // Người dùng hoạt động ở tab khác -> Thiết lập timer cho thời gian còn lại
+          if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+          idleTimerRef.current = setTimeout(checkIdle, IDLE_TIMEOUT_MS - elapsed);
+        }
+      } else {
+        logout();
+      }
+    };
+
     const resetTimer = () => {
       const nowStr = Date.now().toString();
       localStorage.setItem('last_activity', nowStr);
       sessionStorage.setItem('last_activity', nowStr);
 
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-
-      idleTimerRef.current = setTimeout(() => {
-        logout();
-      }, IDLE_TIMEOUT_MS);
+      idleTimerRef.current = setTimeout(checkIdle, IDLE_TIMEOUT_MS);
     };
 
     // Các sự kiện tương tác của người dùng
