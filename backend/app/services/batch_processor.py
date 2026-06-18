@@ -88,7 +88,7 @@ def run_batch_processor_api(file_paths_with_names: List[tuple], db: Session, max
                         "valid_until": file_data.get("valid_until"),
                         "issued_date": file_data.get("issued_date"),
                         "fishing_gear": file_data.get("fishing_gear", ""),
-                        "source_filename": file_data.get("source_filename", file_data['file_name']),
+                        "source_filename": file_data.get("file_name") or file_data.get("source_filename", ""),
                     }
                     
                     if existing_vessel:
