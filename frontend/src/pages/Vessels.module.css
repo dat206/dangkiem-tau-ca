@@ -95,6 +95,49 @@
   background-color: #bfdbfe;
 }
 
+.deleteBtn {
+  color: #dc2626;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  background-color: #fee2e2;
+}
+
+.deleteBtn:hover {
+  background-color: #fca5a5;
+}
+
+.tableHeaderLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.deleteAllBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #dc2626;
+  background-color: #fee2e2;
+  border: 1px solid #fca5a5;
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.deleteAllBtn:hover:not(:disabled) {
+  background-color: #fca5a5;
+  border-color: #f87171;
+}
+
+.deleteAllBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .errorBox {
   margin-bottom: 12px;
   padding: 10px 12px;

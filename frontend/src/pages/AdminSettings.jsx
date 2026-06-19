@@ -1,5 +1,5 @@
 
-import { Save, Shield, Building } from 'lucide-react';
+import { Save, Building } from 'lucide-react';
 import { Card, CardHeader, CardContent, CardFooter } from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
@@ -90,44 +90,6 @@ const AdminSettings = () => {
         </CardContent>
         <CardFooter style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <Button icon={Save}>Lưu cấu hình</Button>
-        </CardFooter>
-      </Card>
-
-      {/* Card 3: Bảo mật */}
-      <Card>
-        <CardHeader 
-          title="Bảo mật & Phiên làm việc" 
-          subtitle="Thiết lập an toàn cho tài khoản người dùng" 
-        />
-        <CardContent style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 16, borderBottom: '1px solid var(--border-light)' }}>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-main)' }}>Thời gian Timeout phiên đăng nhập</div>
-              <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Tự động đăng xuất sau khi không có hoạt động</div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Input type="number" defaultValue={30} inputClassName="w-20 text-center" />
-              <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>phút</span>
-            </div>
-          </div>
-          
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-main)' }}>Bắt buộc đổi mật khẩu</div>
-              <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Yêu cầu người dùng đổi mật khẩu định kỳ</div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <input type="checkbox" defaultChecked style={{ width: 18, height: 18, accentColor: 'var(--primary)' }} />
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>sau mỗi</span>
-                <Input type="number" defaultValue={90} inputClassName="w-20 text-center" />
-                <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>ngày</span>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <Button icon={Shield}>Cập nhật bảo mật</Button>
         </CardFooter>
       </Card>
 

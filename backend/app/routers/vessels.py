@@ -389,3 +389,37 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
         "pieData": pie_data,
         "recentUploads": recent_uploads,
     }
+
+
+@router.delete("/{vessel_id}", status_code=204)
+def delete_vessel(vessel_id: int, db: Session = Depends(get_db)):
+    """Xóa một tàu theo ID."""
+    vessel = db.query(VesselORM).filter(VesselORM.id == vessel_id).first()
+    if not vessel:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Không tìm thấy tàu.")
+    db.delete(vessel)
+    db.commit()
+    return Response(status_code=204)
+
+
+@router.delete("/", status_code=200)
+def delete_all_vessels(
+    search: Optional[str] = None,
+    province_code: Optional[str] = None,
+    inspection_type: Optional[str] = None,
+    length_group: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    """Xóa tất cả tàu (hoặc tất cả tàu khớp bộ lọc hiện tại)."""
+    query = _apply_vessel_filters(
+        db.query(VesselORM),
+        search=search,
+        province_code=province_code,
+        inspection_type=inspection_type,
+        length_group=length_group,
+    )
+    deleted_count = query.count()
+    query.delete(synchronize_session=False)
+    db.commit()
+    return {"deleted": deleted_count}

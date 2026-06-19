@@ -151,7 +151,7 @@ export function LoginPage({ onSwitchToRegister }) {
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [remember, setRemember] = useState(true);
-  const [loading, setLoading] = useState(false);
+
   const [apiErr, setApiErr] = useState('');
   const [fieldErr, setFieldErr] = useState({});
 
@@ -168,14 +168,11 @@ export function LoginPage({ onSwitchToRegister }) {
     e.preventDefault();
     setApiErr('');
     if (!validate()) return;
-    setLoading(true);
     try {
       await login(email.trim(), password, remember);
       // AuthContext sẽ cập nhật isLoggedIn → App.jsx tự chuyển trang
     } catch (err) {
       setApiErr(err.response?.data?.detail || 'Đăng nhập thất bại. Vui lòng thử lại.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -242,14 +239,10 @@ export function LoginPage({ onSwitchToRegister }) {
           Ghi nhớ đăng nhập trên thiết bị này
         </label>
 
-        <button id="login-submit" type="submit" disabled={loading}
-          className={`h-12 rounded-xl font-bold text-white flex items-center justify-center gap-3 transition-all
-            bg-[#0b3d6b] hover:bg-[#0a3560] active:scale-[.98] shadow-lg shadow-[#0b3d6b]/20
-            ${loading ? 'opacity-70 cursor-wait' : ''}`}>
-          {loading && (
-            <span className="w-5 h-5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-          )}
-          {loading ? 'Đang xác thực...' : 'Đăng nhập'}
+        <button id="login-submit" type="submit"
+          className="h-12 rounded-xl font-bold text-white flex items-center justify-center gap-3 transition-all
+            bg-[#0b3d6b] hover:bg-[#0a3560] active:scale-[.98] shadow-lg shadow-[#0b3d6b]/20">
+          Đăng nhập
         </button>
       </form>
 
