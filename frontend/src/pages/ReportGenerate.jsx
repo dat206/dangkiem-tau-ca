@@ -32,6 +32,7 @@ const ReportGenerate = () => {
   const [formats, setFormats] = useState({ detail: true, summary: true });
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
+  const [fetchError, setFetchError] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -44,6 +45,7 @@ const ReportGenerate = () => {
         const data = await getExportOptions({ quarter, year });
         if (!active) return;
         setOptions(data);
+        setFetchError('');
         setSelectedProvinces((current) => {
           const validCodes = new Set((data.provinces || []).map((item) => item.code));
           const kept = current.filter((code) => validCodes.has(code));
@@ -55,7 +57,7 @@ const ReportGenerate = () => {
         if (!active) return;
         setOptions({ total: 0, provinces: [] });
         setSelectedProvinces([]);
-        setError(err.response?.data?.detail || 'Không tải được dữ liệu báo cáo từ CSDL.');
+        setFetchError(err.response?.data?.detail || 'Không tải được dữ liệu báo cáo từ CSDL.');
         setStatus('idle');
       }
     };
@@ -172,10 +174,10 @@ const ReportGenerate = () => {
               </div>
             )}
 
-            {error && (
+            {fetchError && (
               <div className={styles.warningBox}>
                 <AlertTriangle size={20} />
-                {error}
+                {fetchError}
               </div>
             )}
           </div>
@@ -221,7 +223,10 @@ const ReportGenerate = () => {
                   <div
                     key={type.code}
                     className={`${styles.formatCard} ${checked ? styles.checked : ''}`}
-                    onClick={() => setFormats((current) => ({ ...current, [type.key]: !current[type.key] }))}
+                    onClick={() => {
+                      setError('');
+                      setFormats((current) => ({ ...current, [type.key]: !current[type.key] }));
+                    }}
                   >
                     <div style={{ marginTop: 2 }}>
                       <input type="checkbox" checked={checked} readOnly className={styles.checkboxInput} />
@@ -237,6 +242,12 @@ const ReportGenerate = () => {
             </div>
 
             <div className={styles.submitArea}>
+              {error && (
+                <div className={styles.warningBox} style={{ marginBottom: 12 }}>
+                  <AlertTriangle size={20} />
+                  {error}
+                </div>
+              )}
               <Button
                 size="lg"
                 style={{ width: '100%' }}

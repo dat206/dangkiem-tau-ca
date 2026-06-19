@@ -64,6 +64,7 @@ const Vessels = () => {
   const [error, setError] = useState('');
   const [exporting, setExporting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [checkedIds, setCheckedIds] = useState(new Set());
   const [options, setOptions] = useState(FALLBACK_OPTIONS);
 
   const [searchInput, setSearchInput] = useState('');
@@ -115,6 +116,7 @@ const Vessels = () => {
       const json = await res.json();
       setData(json.items || []);
       setTotal(json.total || 0);
+      setCheckedIds(new Set()); // reset checkboxes khi load trang mới
     } catch (err) {
       setError(err.message || 'Không tải được dữ liệu tàu.');
       setData([]);
@@ -235,6 +237,56 @@ const Vessels = () => {
     }
   };
 
+  // ─── Checkbox helpers ───────────────────────────────────────────────────────
+  const allPageChecked = data.length > 0 && data.every((row) => checkedIds.has(row.id));
+  const somePageChecked = data.some((row) => checkedIds.has(row.id));
+
+  const toggleAll = () => {
+    if (allPageChecked) {
+      setCheckedIds((prev) => {
+        const next = new Set(prev);
+        data.forEach((row) => next.delete(row.id));
+        return next;
+      });
+    } else {
+      setCheckedIds((prev) => {
+        const next = new Set(prev);
+        data.forEach((row) => next.add(row.id));
+        return next;
+      });
+    }
+  };
+
+  const toggleRow = (id, event) => {
+    event.stopPropagation();
+    setCheckedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const deleteSelected = async () => {
+    if (checkedIds.size === 0) return;
+    if (!window.confirm(`Xác nhận xóa ${checkedIds.size} hồ sơ đã chọn?`)) return;
+    setDeleting(true);
+    try {
+      await Promise.all(
+        [...checkedIds].map((id) =>
+          fetch(`${API_BASE}/api/vessels/${id}`, { method: 'DELETE' }).then((r) => {
+            if (!r.ok) throw new Error(`Lỗi xóa ID ${id}`);
+          })
+        )
+      );
+      setCheckedIds(new Set());
+      fetchData();
+    } catch (err) {
+      setError(err.message || 'Không xóa được một số hồ sơ.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className={styles.vesselsPage}>
       <form className={styles.filterBar} onSubmit={applySearch}>
@@ -302,16 +354,28 @@ const Vessels = () => {
             <span className={styles.recordCount}>
               Hiển thị {startRecord}-{endRecord} / {total} kết quả
             </span>
-            <button
-              type="button"
-              className={styles.deleteAllBtn}
-              onClick={deleteAllVessels}
-              disabled={deleting || total === 0}
-              title="Xóa tất cả dữ liệu hiện tại"
-            >
-              <Trash2 size={14} />
-              {deleting ? 'Đang xóa...' : `Xóa tất cả (${total})`}
-            </button>
+            <div className={styles.deleteBtnGroup}>
+              <button
+                type="button"
+                className={styles.deleteSelectedBtn}
+                onClick={deleteSelected}
+                disabled={deleting || checkedIds.size === 0}
+                title="Xóa những hồ sơ đã chọn"
+              >
+                <Trash2 size={14} />
+                {deleting ? 'Đang xóa...' : `Xóa đã chọn${checkedIds.size > 0 ? ` (${checkedIds.size})` : ''}`}
+              </button>
+              <button
+                type="button"
+                className={styles.deleteAllBtn}
+                onClick={deleteAllVessels}
+                disabled={deleting || total === 0}
+                title="Xóa tất cả dữ liệu hiện tại"
+              >
+                <Trash2 size={14} />
+                {deleting ? 'Đang xóa...' : `Xóa tất cả (${total})`}
+              </button>
+            </div>
           </div>
           <Button variant="secondary" icon={Download} onClick={downloadCsv} loading={exporting} disabled={total === 0}>
             Xuất CSV
@@ -323,6 +387,16 @@ const Vessels = () => {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead style={{ width: 40 }}>
+                <input
+                  type="checkbox"
+                  className={styles.headerCheckbox}
+                  checked={allPageChecked}
+                  ref={(el) => { if (el) el.indeterminate = somePageChecked && !allPageChecked; }}
+                  onChange={toggleAll}
+                  title="Chọn tất cả trang này"
+                />
+              </TableHead>
               <TableHead>STT</TableHead>
               <TableHead>Số ĐK</TableHead>
               <TableHead>Chủ tàu</TableHead>
@@ -338,19 +412,31 @@ const Vessels = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={10} style={{ textAlign: 'center', padding: 20 }}>
+                <TableCell colSpan={11} style={{ textAlign: 'center', padding: 20 }}>
                   Đang tải...
                 </TableCell>
               </TableRow>
             ) : data.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} style={{ textAlign: 'center', padding: 20, color: 'var(--text-muted)' }}>
+                <TableCell colSpan={11} style={{ textAlign: 'center', padding: 20, color: 'var(--text-muted)' }}>
                   Không có tàu nào khớp điều kiện.
                 </TableCell>
               </TableRow>
             ) : (
               data.map((row, idx) => (
-                <TableRow key={row.id} onClick={() => setSelectedVessel(row)} style={{ cursor: 'pointer' }}>
+                <TableRow
+                  key={row.id}
+                  onClick={() => setSelectedVessel(row)}
+                  style={{ cursor: 'pointer', background: checkedIds.has(row.id) ? 'var(--info-bg)' : undefined }}
+                >
+                  <TableCell onClick={(e) => e.stopPropagation()} style={{ width: 40 }}>
+                    <input
+                      type="checkbox"
+                      className={styles.rowCheckbox}
+                      checked={checkedIds.has(row.id)}
+                      onChange={(e) => toggleRow(row.id, e)}
+                    />
+                  </TableCell>
                   <TableCell>{(page - 1) * pageSize + idx + 1}</TableCell>
                   <TableCell style={{ fontWeight: 600, color: 'var(--primary)' }}>{displayValue(row.reg)}</TableCell>
                   <TableCell>{displayValue(row.owner)}</TableCell>
@@ -365,25 +451,27 @@ const Vessels = () => {
                   <TableCell>{displayValue(row.date)}</TableCell>
                   <TableCell>{displayValue(row.expire)}</TableCell>
                   <TableCell>
-                    <button
-                      type="button"
-                      className={styles.actionBtn}
-                      title="Xem chi tiết"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setSelectedVessel(row);
-                      }}
-                    >
-                      <Eye size={18} />
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.deleteBtn}
-                      title="Xóa hồ sơ"
-                      onClick={(event) => deleteVessel(row.id, event)}
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <div className={styles.actionGroup}>
+                      <button
+                        type="button"
+                        className={styles.actionBtn}
+                        title="Xem chi tiết"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setSelectedVessel(row);
+                        }}
+                      >
+                        <Eye size={18} />
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.deleteBtn}
+                        title="Xóa hồ sơ"
+                        onClick={(event) => deleteVessel(row.id, event)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
