@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Download, Eye, Filter, Search, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Eye, Filter, Search, Trash2, X } from 'lucide-react';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
@@ -63,6 +63,7 @@ const Vessels = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [exporting, setExporting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [options, setOptions] = useState(FALLBACK_OPTIONS);
 
   const [searchInput, setSearchInput] = useState('');
@@ -206,6 +207,34 @@ const Vessels = () => {
     }
   };
 
+  const deleteVessel = async (id, event) => {
+    event.stopPropagation();
+    if (!window.confirm('Xác nhận xóa hồ sơ tàu này?')) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/vessels/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`Lỗi ${res.status}`);
+      fetchData();
+    } catch (err) {
+      setError(err.message || 'Không xóa được tàu.');
+    }
+  };
+
+  const deleteAllVessels = async () => {
+    const count = total;
+    if (!window.confirm(`Xác nhận xóa tất cả ${count} tàu hiện đang lọc? Hành động này không thể hoàn tác!`)) return;
+    setDeleting(true);
+    try {
+      const query = exportParams.toString();
+      const res = await fetch(`${API_BASE}/api/vessels/${query ? `?${query}` : ''}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`Lỗi ${res.status}`);
+      fetchData();
+    } catch (err) {
+      setError(err.message || 'Không xóa được dữ liệu.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className={styles.vesselsPage}>
       <form className={styles.filterBar} onSubmit={applySearch}>
@@ -269,9 +298,21 @@ const Vessels = () => {
 
       <div>
         <div className={styles.tableHeader}>
-          <span className={styles.recordCount}>
-            Hiển thị {startRecord}-{endRecord} / {total} kết quả
-          </span>
+          <div className={styles.tableHeaderLeft}>
+            <span className={styles.recordCount}>
+              Hiển thị {startRecord}-{endRecord} / {total} kết quả
+            </span>
+            <button
+              type="button"
+              className={styles.deleteAllBtn}
+              onClick={deleteAllVessels}
+              disabled={deleting || total === 0}
+              title="Xóa tất cả dữ liệu hiện tại"
+            >
+              <Trash2 size={14} />
+              {deleting ? 'Đang xóa...' : `Xóa tất cả (${total})`}
+            </button>
+          </div>
           <Button variant="secondary" icon={Download} onClick={downloadCsv} loading={exporting} disabled={total === 0}>
             Xuất CSV
           </Button>
@@ -334,6 +375,14 @@ const Vessels = () => {
                       }}
                     >
                       <Eye size={18} />
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.deleteBtn}
+                      title="Xóa hồ sơ"
+                      onClick={(event) => deleteVessel(row.id, event)}
+                    >
+                      <Trash2 size={16} />
                     </button>
                   </TableCell>
                 </TableRow>
