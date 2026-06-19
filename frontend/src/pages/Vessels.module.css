@@ -95,6 +95,12 @@
   background-color: #bfdbfe;
 }
 
+.actionGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .deleteBtn {
   color: #dc2626;
   padding: 6px;
@@ -109,8 +115,39 @@
 .tableHeaderLeft {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   align-items: flex-start;
+}
+
+.deleteBtnGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.deleteSelectedBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #b45309;
+  background-color: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.deleteSelectedBtn:hover:not(:disabled) {
+  background-color: #fde68a;
+  border-color: #f59e0b;
+}
+
+.deleteSelectedBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .deleteAllBtn {
@@ -136,6 +173,15 @@
 .deleteAllBtn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+.headerCheckbox,
+.rowCheckbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+  cursor: pointer;
+  border-radius: 3px;
 }
 
 .errorBox {
