@@ -176,14 +176,7 @@ const Login = () => {
               className={styles.submitBtn}
               id="login-submit"
             >
-              {loading ? (
-                <>
-                  <span className={styles.spinner} />
-                  Đang xác thực...
-                </>
-              ) : (
-                'Đăng nhập'
-              )}
+              Đăng nhập
             </button>
           </form>
 
