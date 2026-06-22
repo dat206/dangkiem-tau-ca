@@ -208,6 +208,8 @@ def generate_quarterly_summary_excel(vessels: List[Any], quarter: int, year: int
     Creates one sheet per province with 21 columns and specific grouping.
     """
     wb = Workbook()
+    register_styles(wb)
+    set_default_font(wb)
     
     provinces_in_data = sorted(list(set(v.province_code for v in vessels if v.province_code)))
     
@@ -231,8 +233,6 @@ def generate_quarterly_summary_excel(vessels: List[Any], quarter: int, year: int
         sheet_title = prov_name[:31]
         ws = wb.create_sheet(title=sheet_title)
         
-        register_styles(wb)
-        set_default_font(wb)
         ws.sheet_view.showGridLines = False
         
         # Build Header
