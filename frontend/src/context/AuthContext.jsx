@@ -18,7 +18,7 @@ export function AuthProvider({ children }) {
     }
     return null;
   });
-  const [loading, setLoading] = useState(false); // Không block UI bằng loading khi khởi tạo
+  const loading = false; // Không block UI bằng loading khi khởi tạo
 
 
 
