@@ -406,29 +406,35 @@ def generate_quarterly_summary_excel(vessels: List[Any], quarter: int, year: int
                     cell.font = normal_font
                     cell.alignment = center_align
 
-            # Col D: Tổng Gỗ = G+J+M+P+S
-            formula_d = (f"={get_column_letter(7)}{r}+{get_column_letter(10)}{r}"
-                         f"+{get_column_letter(13)}{r}+{get_column_letter(16)}{r}"
-                         f"+{get_column_letter(19)}{r}")
-            cell_d = ws.cell(row=r, column=4, value=formula_d)
+            # Col D: Tổng Gỗ = SUM(G, J, M, P, S) - dùng SUM để tránh #VALUE! khi ô rỗng
+            g7, g10, g13, g16, g19 = (
+                get_column_letter(7), get_column_letter(10),
+                get_column_letter(13), get_column_letter(16), get_column_letter(19)
+            )
+            cell_d = ws.cell(row=r, column=4,
+                value=f"=SUM({g7}{r},{g10}{r},{g13}{r},{g16}{r},{g19}{r})")
             cell_d.font = normal_font; cell_d.alignment = center_align
 
-            # Col E: Tổng Thép = H+K+N+Q+T
-            formula_e = (f"={get_column_letter(8)}{r}+{get_column_letter(11)}{r}"
-                         f"+{get_column_letter(14)}{r}+{get_column_letter(17)}{r}"
-                         f"+{get_column_letter(20)}{r}")
-            cell_e = ws.cell(row=r, column=5, value=formula_e)
+            # Col E: Tổng Thép = SUM(H, K, N, Q, T)
+            g8, g11, g14, g17, g20 = (
+                get_column_letter(8), get_column_letter(11),
+                get_column_letter(14), get_column_letter(17), get_column_letter(20)
+            )
+            cell_e = ws.cell(row=r, column=5,
+                value=f"=SUM({g8}{r},{g11}{r},{g14}{r},{g17}{r},{g20}{r})")
             cell_e.font = normal_font; cell_e.alignment = center_align
 
-            # Col F: Tổng FRP = I+L+O+R+U
-            formula_f = (f"={get_column_letter(9)}{r}+{get_column_letter(12)}{r}"
-                         f"+{get_column_letter(15)}{r}+{get_column_letter(18)}{r}"
-                         f"+{get_column_letter(21)}{r}")
-            cell_f = ws.cell(row=r, column=6, value=formula_f)
+            # Col F: Tổng FRP = SUM(I, L, O, R, U)
+            g9, g12, g15, g18, g21 = (
+                get_column_letter(9), get_column_letter(12),
+                get_column_letter(15), get_column_letter(18), get_column_letter(21)
+            )
+            cell_f = ws.cell(row=r, column=6,
+                value=f"=SUM({g9}{r},{g12}{r},{g15}{r},{g18}{r},{g21}{r})")
             cell_f.font = normal_font; cell_f.alignment = center_align
 
-            # Col C: Tổng tàu phải ĐK = D+E+F
-            cell_c = ws.cell(row=r, column=3, value=f"=D{r}+E{r}+F{r}")
+            # Col C: Tổng tàu phải ĐK = SUM(D, E, F)
+            cell_c = ws.cell(row=r, column=3, value=f"=SUM(D{r},E{r},F{r})")
             cell_c.font = normal_font; cell_c.alignment = center_align
 
         # ============================================================
