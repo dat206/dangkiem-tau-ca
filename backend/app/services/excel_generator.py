@@ -204,15 +204,15 @@ def generate_vessel_excel(data: List[Any]) -> BytesIO:
 
 def generate_quarterly_summary_excel(vessels: List[Any], quarter: int, year: int) -> BytesIO:
     """
-    Generate "Báo cáo Quý theo tỉnh"
-    Creates one sheet per province with 21 columns and specific grouping.
+    Generate "Báo cáo Quý theo tỉnh" - theo chuẩn file công ty.
+    Cấu trúc: phần đầu hành chính (rows 1-4), header bảng 3 dòng + hàng số TT (rows 5-8),
+    dữ liệu bắt đầu row 9, nhóm cột theo hình thức kiểm tra: Đóng mới, Hàng năm, Trên đà, Định kỳ, Cải hoán.
     """
     wb = Workbook()
     register_styles(wb)
     set_default_font(wb)
-    
+
     provinces_in_data = sorted(list(set(v.province_code for v in vessels if v.province_code)))
-    
     if not provinces_in_data:
         ws = wb.active
         ws.title = "No Data"
@@ -228,77 +228,125 @@ def generate_quarterly_summary_excel(vessels: List[Any], quarter: int, year: int
 
     for prov_code in provinces_in_data:
         prov_name = get_province_name(prov_code).upper()
-        
+
         # Valid sheet name max length is 31
-        sheet_title = prov_name[:31]
-        ws = wb.create_sheet(title=sheet_title)
-        
+        ws = wb.create_sheet(title=prov_name[:31])
         ws.sheet_view.showGridLines = False
-        
-        # Build Header
-        # Row 1-2 Title
-        ws.merge_cells("A1:U1")
-        title_cell = ws["A1"]
-        title_cell.value = "BÁO CÁO KẾT QUẢ THỰC HIỆN CÔNG TÁC ĐĂNG KIỂM"
-        title_cell.font = Font(name="Times New Roman", size=14, bold=True)
-        title_cell.alignment = Alignment(horizontal="center")
-        
-        ws.merge_cells("A2:U2")
-        subtitle_cell = ws["A2"]
-        subtitle_cell.value = f"Tại tỉnh/thành phố: {prov_name} (Tháng/Quý {quarter} - {year})"
-        subtitle_cell.font = Font(name="Times New Roman", size=12, italic=True)
-        subtitle_cell.alignment = Alignment(horizontal="center")
-        
-        # Main Headers (Rows 4,5,6)
-        # Column mapping: 
-        # 1: STT, 2: Nhóm tàu theo chiều dài Lmax (m), 3: Tổng số tàu KT
-        # 4-7: Tàu cá gỗ (Tổng, Định kỳ, Hàng năm, Cải hoán)
-        # 8-11: Tàu vỏ thép
-        # 12-15: Vật liệu mới FRP
-        # 16: Số lượng tàu đóng mới (Gỗ, Thép, FRP) - 16, 17, 18
-        # 19: Lập hồ sơ đăng kiểm
-        # 20: Giấy chứng nhận ATKT được cấp
-        # 21: Ghi chú
-        
+
+        # ============================================================
+        # STYLE DEFINITIONS
+        # ============================================================
         header_fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
         header_font = Font(name="Times New Roman", size=11, bold=True)
         header_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
-        
+        normal_font = Font(name="Times New Roman", size=11)
+        bold_font = Font(name="Times New Roman", size=11, bold=True)
+        center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        left_align = Alignment(horizontal="left", vertical="center", wrap_text=True)
+        thin_side = Side(border_style="thin", color="000000")
+        thin_border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
+
         def write_h(r, c, val):
             cell = ws.cell(row=r, column=c, value=val)
             cell.font = header_font
             cell.alignment = header_align
             cell.fill = header_fill
+            return cell
 
-        # Merge Setup
-        ws.merge_cells("A4:A6"); write_h(4, 1, "STT")
-        ws.merge_cells("B4:B6"); write_h(4, 2, "Nhóm tàu theo chiều dài Lmax (m)")
-        ws.merge_cells("C4:C6"); write_h(4, 3, "Tổng số tàu được KT")
-        
-        ws.merge_cells("D4:G4"); write_h(4, 4, "Tàu cá vỏ gỗ")
-        ws.merge_cells("H4:K4"); write_h(4, 8, "Tàu vỏ thép")
-        ws.merge_cells("L4:O4"); write_h(4, 12, "Tàu vật liệu mới (FRP)")
-        
-        for base_col in [4, 8, 12]:
-            ws.merge_cells(start_row=5, start_column=base_col, end_row=6, end_column=base_col)
-            write_h(5, base_col, "Tổng số")
-            ws.merge_cells(start_row=5, start_column=base_col+1, end_row=5, end_column=base_col+3)
-            write_h(5, base_col+1, "Trong đó")
-            write_h(6, base_col+1, "Định kỳ")
-            write_h(6, base_col+2, "Hàng năm")
-            write_h(6, base_col+3, "Cải hoán")
-            
-        ws.merge_cells("P4:R4"); write_h(4, 16, "Số lượng tàu đóng mới")
-        ws.merge_cells("P5:P6"); write_h(5, 16, "Gỗ")
-        ws.merge_cells("Q5:Q6"); write_h(5, 17, "Thép")
-        ws.merge_cells("R5:R6"); write_h(5, 18, "FRP")
-        
-        ws.merge_cells("S4:S6"); write_h(4, 19, "Lập hồ sơ đăng kiểm")
-        ws.merge_cells("T4:T6"); write_h(4, 20, "Giấy CN ATKT được cấp")
-        ws.merge_cells("U4:U6"); write_h(4, 21, "Ghi chú")
-        
-        # Fill empty merged cells to apply styles
-        for r in range(4, 7):
+        # ============================================================
+        # ROW 1: Phụ lục / công văn
+        # ============================================================
+        ws.merge_cells("A1:U1")
+        c1 = ws["A1"]
+        c1.value = (
+            f"(Kèm theo Công văn số      /BC/ĐKTC ngày      /{quarter * 3}/{year} "
+            "của Công ty CP công nghệ cao Hoàng Bảo Minh)"
+        )
+        c1.font = Font(name="Times New Roman", size=11, italic=True)
+        c1.alignment = Alignment(horizontal="center", vertical="center")
+
+        # ============================================================
+        # ROW 2: Tên công ty (A2) + CỘNG HÒA (D2) + Mẫu số (Q2)
+        # ============================================================
+        ws.merge_cells("A2:C2")
+        c2_cty = ws["A2"]
+        c2_cty.value = "CÔNG TY CP CÔNG NGHỆ CAO\nHOÀNG BẢO MINH"
+        c2_cty.font = bold_font
+        c2_cty.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+        ws.merge_cells("D2:P2")
+        c2_chxhcn = ws["D2"]
+        c2_chxhcn.value = "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐộc Lập - Tự do - Hạnh phúc"
+        c2_chxhcn.font = bold_font
+        c2_chxhcn.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+        ws.merge_cells("Q2:U2")
+        c2_mau = ws["Q2"]
+        c2_mau.value = "Mẫu số 04.BC"
+        c2_mau.font = normal_font
+        c2_mau.alignment = Alignment(horizontal="right", vertical="center")
+
+        # ============================================================
+        # ROW 3: Địa danh, ngày tháng năm (căn phải bên cột J)
+        # ============================================================
+        ws.merge_cells("J3:U3")
+        c3 = ws["J3"]
+        c3.value = f"Thanh Hóa, ngày      tháng {quarter * 3} năm {year}"
+        c3.font = Font(name="Times New Roman", size=11, italic=True)
+        c3.alignment = Alignment(horizontal="center", vertical="center")
+
+        # ============================================================
+        # ROW 4: Tiêu đề báo cáo
+        # ============================================================
+        ws.merge_cells("A4:U4")
+        c4 = ws["A4"]
+        c4.value = f"BÁO CÁO TÌNH HÌNH ĐĂNG KIỂM TÀU CÁ QUÝ {quarter} NĂM {year}"
+        c4.font = Font(name="Times New Roman", size=14, bold=True)
+        c4.alignment = Alignment(horizontal="center", vertical="center")
+
+        # Subtitle province below title
+        ws.merge_cells("A4b:U4b") if False else None  # skip placeholder
+
+        # ============================================================
+        # ROWS 5-7: Header bảng 3 dòng
+        # Layout (21 cột A-U):
+        #   A=1  : TT                      (merge 5:7)
+        #   B=2  : Nhóm tàu               (merge 5:7)
+        #   C=3  : Tổng số tàu phải ĐK   (merge 5:7)
+        #   D=4  : Số tàu VLV Gỗ         (merge 5:7)
+        #   E=5  : Số tàu VLV Thép       (merge 5:7)
+        #   F=6  : Số tàu VLV FRP        (merge 5:7)
+        #   G=7  H=8  I=9  : Đóng mới/lần đầu (Gỗ/Thép/FRP)
+        #   J=10 K=11 L=12 : Hàng năm         (Gỗ/Thép/FRP)
+        #   M=13 N=14 O=15 : Trên đà           (Gỗ/Thép/FRP)
+        #   P=16 Q=17 R=18 : Định kỳ           (Gỗ/Thép/FRP)
+        #   S=19 T=20 U=21 : Cải hoán          (Gỗ/Thép/FRP)
+        # ============================================================
+        # Row 5 - Level 1
+        ws.merge_cells("A5:A7"); write_h(5, 1, "TT")
+        ws.merge_cells("B5:B7"); write_h(5, 2, "Nhóm tàu")
+        ws.merge_cells("C5:C7"); write_h(5, 3, "Tổng số tàu phải đăng kiểm")
+        ws.merge_cells("D5:F5"); write_h(5, 4, "Số tàu theo vật liệu vỏ")
+        ws.merge_cells("G5:U5"); write_h(5, 7, "Tổng số tàu cá đã đăng kiểm\n(đến thời điểm báo cáo)")
+
+        # Row 6 - Level 2
+        ws.merge_cells("D6:D7"); write_h(6, 4, "Gỗ")
+        ws.merge_cells("E6:E7"); write_h(6, 5, "Thép")
+        ws.merge_cells("F6:F7"); write_h(6, 6, "FRP")
+        ws.merge_cells("G6:I6"); write_h(6, 7, "Số tàu đóng mới/\nlần đầu")
+        ws.merge_cells("J6:L6"); write_h(6, 10, "Hàng năm")
+        ws.merge_cells("M6:O6"); write_h(6, 13, "Trên đà")
+        ws.merge_cells("P6:R6"); write_h(6, 16, "Định kỳ")
+        ws.merge_cells("S6:U6"); write_h(6, 19, "Cải hoán")
+
+        # Row 7 - Level 3 (Gỗ/Thép/FRP for each inspection type)
+        for base_col in [7, 10, 13, 16, 19]:
+            write_h(7, base_col,     "Gỗ")
+            write_h(7, base_col + 1, "Thép")
+            write_h(7, base_col + 2, "FRP")
+
+        # Fill empty header cells
+        for r in range(5, 8):
             for c in range(1, 22):
                 cell = ws.cell(row=r, column=c)
                 if not cell.value:
@@ -306,80 +354,143 @@ def generate_quarterly_summary_excel(vessels: List[Any], quarter: int, year: int
                     cell.alignment = header_align
                     cell.fill = header_fill
 
-        # Column widths
-        ws.column_dimensions['A'].width = 6
-        ws.column_dimensions['B'].width = 18
-        ws.column_dimensions['C'].width = 12
-        for col_idx in range(4, 21):
-            ws.column_dimensions[get_column_letter(col_idx)].width = 10
-        ws.column_dimensions['U'].width = 15
+        # Row 8 - Số thứ tự cột (1)-(21)
+        for c in range(1, 22):
+            cell = ws.cell(row=8, column=c, value=f"({c})")
+            cell.font = normal_font
+            cell.alignment = center_align
+            cell.fill = header_fill
+            cell.border = thin_border
 
-        # Data Rows
-        # Groups: L12_15, L15_20, L20_24, L24_30, L30_plus
+        # ============================================================
+        # DATA ROWS (rows 9-13)
+        # ============================================================
         length_groups = [
-            ('L12_15', 'Tàu có Lmax từ 12- dưới 15m'),
-            ('L15_20', 'Tàu có Lmax từ 15- dưới 20m'),
-            ('L20_24', 'Tàu có Lmax từ 20- dưới 24m'),
-            ('L24_30', 'Tàu có Lmax từ 24- dưới 30m'),
-            ('L30_plus', 'Tàu có Lmax từ 30 trở lên'),
+            ('L12_15',  'Lmax từ 12 ÷ < 15m'),
+            ('L15_20',  'Lmax từ 15 ÷ < 20m'),
+            ('L20_24',  'Lmax từ 20 ÷ < 24m'),
+            ('L24_30',  'Lmax từ 24 ÷ < 30m'),
+            ('L30_plus','Lmax từ ≥ 30m'),
         ]
-        
-        materials = ['Gỗ', 'Thép', 'FRP']
-        insp_cats = ['ALL', 'dinh_ky', 'hang_nam', 'cai_hoan']
-        
-        current_row = 7
-        for idx, (lg_code, lg_name) in enumerate(length_groups, start=1):
-            # STT
-            c_stt = ws.cell(row=current_row, column=1, value=idx)
-            c_stt.alignment = Alignment(horizontal="center")
-            
-            # Name
-            c_name = ws.cell(row=current_row, column=2, value=lg_name)
-            
-            # Calculations
-            cells_to_write = {}
-            col_offset = 4
-            row_total = 0
-            
-            for mat in materials:
-                for icat in insp_cats:
-                    val = count_for_cell(vessels, prov_code, lg_code, mat, icat)
-                    cells_to_write[col_offset] = val
-                    if icat == 'ALL':
-                        row_total += val
-                    col_offset += 1
-            
-            # Total
-            c_tot = ws.cell(row=current_row, column=3, value=row_total)
-            c_tot.alignment = Alignment(horizontal="center")
-            
-            # Write material cells
-            for c_idx, val in cells_to_write.items():
-                c_val = ws.cell(row=current_row, column=c_idx, value=val if val > 0 else "")
-                c_val.alignment = Alignment(horizontal="center")
-                
-            # Dong moi
-            dm_go = count_for_cell(vessels, prov_code, lg_code, 'Gỗ', 'dong_moi')
-            dm_thep = count_for_cell(vessels, prov_code, lg_code, 'Thép', 'dong_moi')
-            dm_frp = count_for_cell(vessels, prov_code, lg_code, 'FRP', 'dong_moi')
-            ws.cell(row=current_row, column=16, value=dm_go if dm_go > 0 else "").alignment = Alignment(horizontal="center")
-            ws.cell(row=current_row, column=17, value=dm_thep if dm_thep > 0 else "").alignment = Alignment(horizontal="center")
-            ws.cell(row=current_row, column=18, value=dm_frp if dm_frp > 0 else "").alignment = Alignment(horizontal="center")
-            
-            current_row += 1
-            
-        # TONG CONG
-        c_tot_stt = ws.cell(row=current_row, column=1, value="")
-        c_tot_name = ws.cell(row=current_row, column=2, value="TỔNG CỘNG")
-        c_tot_name.font = Font(name="Times New Roman", size=11, bold=True)
-        
-        for c in range(3, 21):
-            col_letter = get_column_letter(c)
-            c_tot_val = ws.cell(row=current_row, column=c, value=f"=SUM({col_letter}7:{col_letter}{current_row-1})")
-            c_tot_val.font = Font(name="Times New Roman", size=11, bold=True)
-            c_tot_val.alignment = Alignment(horizontal="center")
 
-        apply_full_border(ws, start_row=4, end_row=current_row, start_col=1, end_col=21)
+        # (inspection_category, base_column_index)
+        insp_col_map = [
+            ('dong_moi', 7),   # cols G H I
+            ('hang_nam', 10),  # cols J K L
+            ('tren_da',  13),  # cols M N O
+            ('dinh_ky',  16),  # cols P Q R
+            ('cai_hoan', 19),  # cols S T U
+        ]
+        materials_order = ['Gỗ', 'Thép', 'FRP']
+
+        data_start_row = 9
+        for idx, (lg_code, lg_name) in enumerate(length_groups, start=1):
+            r = data_start_row + idx - 1
+
+            # Col A: STT
+            cell_stt = ws.cell(row=r, column=1, value=idx)
+            cell_stt.font = normal_font
+            cell_stt.alignment = center_align
+
+            # Col B: Nhóm tàu
+            cell_name = ws.cell(row=r, column=2, value=lg_name)
+            cell_name.font = normal_font
+            cell_name.alignment = left_align
+
+            # Cols G-U: fill inspection data by type × material
+            for (insp_cat, base_col) in insp_col_map:
+                for mat_idx, mat in enumerate(materials_order):
+                    val = count_for_cell(vessels, prov_code, lg_code, mat, insp_cat)
+                    col = base_col + mat_idx
+                    cell = ws.cell(row=r, column=col, value=val if val > 0 else "")
+                    cell.font = normal_font
+                    cell.alignment = center_align
+
+            # Col D: Tổng Gỗ = G+J+M+P+S
+            formula_d = (f"={get_column_letter(7)}{r}+{get_column_letter(10)}{r}"
+                         f"+{get_column_letter(13)}{r}+{get_column_letter(16)}{r}"
+                         f"+{get_column_letter(19)}{r}")
+            cell_d = ws.cell(row=r, column=4, value=formula_d)
+            cell_d.font = normal_font; cell_d.alignment = center_align
+
+            # Col E: Tổng Thép = H+K+N+Q+T
+            formula_e = (f"={get_column_letter(8)}{r}+{get_column_letter(11)}{r}"
+                         f"+{get_column_letter(14)}{r}+{get_column_letter(17)}{r}"
+                         f"+{get_column_letter(20)}{r}")
+            cell_e = ws.cell(row=r, column=5, value=formula_e)
+            cell_e.font = normal_font; cell_e.alignment = center_align
+
+            # Col F: Tổng FRP = I+L+O+R+U
+            formula_f = (f"={get_column_letter(9)}{r}+{get_column_letter(12)}{r}"
+                         f"+{get_column_letter(15)}{r}+{get_column_letter(18)}{r}"
+                         f"+{get_column_letter(21)}{r}")
+            cell_f = ws.cell(row=r, column=6, value=formula_f)
+            cell_f.font = normal_font; cell_f.alignment = center_align
+
+            # Col C: Tổng tàu phải ĐK = D+E+F
+            cell_c = ws.cell(row=r, column=3, value=f"=D{r}+E{r}+F{r}")
+            cell_c.font = normal_font; cell_c.alignment = center_align
+
+        # ============================================================
+        # TỔNG CỘNG row
+        # ============================================================
+        total_row = data_start_row + len(length_groups)  # row 14
+        data_end_row = total_row - 1                      # row 13
+
+        ws.cell(row=total_row, column=1, value="").font = bold_font
+
+        cell_tc_name = ws.cell(row=total_row, column=2, value="Tổng Cộng")
+        cell_tc_name.font = bold_font
+        cell_tc_name.alignment = left_align
+
+        for c in range(3, 22):
+            col_letter = get_column_letter(c)
+            cell_sum = ws.cell(
+                row=total_row, column=c,
+                value=f"=SUM({col_letter}{data_start_row}:{col_letter}{data_end_row})"
+            )
+            cell_sum.font = bold_font
+            cell_sum.alignment = center_align
+
+        # ============================================================
+        # NGƯỜI LẬP (after total row)
+        # ============================================================
+        sign_row = total_row + 2
+        cell_sign_label = ws.cell(row=sign_row, column=14, value="NGƯỜI LẬP")
+        cell_sign_label.font = bold_font
+        cell_sign_label.alignment = center_align
+
+        # Placeholder for name (3 rows below label)
+        ws.cell(row=sign_row + 3, column=14, value="").font = normal_font
+
+        # ============================================================
+        # BORDERS
+        # ============================================================
+        apply_full_border(ws, start_row=5, end_row=total_row, start_col=1, end_col=21)
+
+        # ============================================================
+        # COLUMN WIDTHS
+        # ============================================================
+        ws.column_dimensions['A'].width = 5
+        ws.column_dimensions['B'].width = 22
+        ws.column_dimensions['C'].width = 13
+        ws.column_dimensions['D'].width = 9
+        ws.column_dimensions['E'].width = 9
+        ws.column_dimensions['F'].width = 9
+        for col_idx in range(7, 22):
+            ws.column_dimensions[get_column_letter(col_idx)].width = 8
+
+        # ============================================================
+        # ROW HEIGHTS
+        # ============================================================
+        ws.row_dimensions[1].height = 22
+        ws.row_dimensions[2].height = 35
+        ws.row_dimensions[3].height = 20
+        ws.row_dimensions[4].height = 28
+        ws.row_dimensions[5].height = 45
+        ws.row_dimensions[6].height = 35
+        ws.row_dimensions[7].height = 20
+        ws.row_dimensions[8].height = 18
 
     output = BytesIO()
     wb.save(output)
