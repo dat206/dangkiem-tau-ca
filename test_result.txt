@@ -1,0 +1,42 @@
+﻿Generating Excel...
+Saved to test_output.xlsx
+
+Sheets: ['NGHß╗å AN', 'THANH H├ôA']
+
+=== Sheet: NGHß╗å AN ===
+Max row: 19, Max col: 21
+('(K├¿m theo C├┤ng v─ân sß╗æ      /BC/─ÉKTC ng├áy      /3/2026 cß╗ºa C├┤ng ty CP c├┤ng nghß╗ç cao Ho├áng Bß║úo Minh)', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+('C├öNG TY CP C├öNG NGHß╗å CAO\nHO├ÇNG Bß║óO MINH', None, None, 'Cß╗ÿNG H├ÆA X├â Hß╗ÿI CHß╗ª NGH─¿A VIß╗åT NAM\n─Éß╗Öc Lß║¡p - Tß╗▒ do - Hß║ính ph├║c', None, None, None, None, None, None, None, None, None, None, None, None, 'Mß║½u sß╗æ 04.BC', None, None, None, None)
+(None, None, None, None, None, None, None, None, None, 'Thanh H├│a, ng├áy      th├íng 3 n─âm 2026', None, None, None, None, None, None, None, None, None, None, None)
+('B├üO C├üO T├îNH H├îNH ─É─éNG KIß╗éM T├ÇU C├ü QU├¥ 1 N─éM 2026', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+('TT', 'Nh├│m t├áu', 'Tß╗òng sß╗æ t├áu phß║úi ─æ─âng kiß╗âm', 'Sß╗æ t├áu theo vß║¡t liß╗çu vß╗Å', None, None, 'Tß╗òng sß╗æ t├áu c├í ─æ├ú ─æ─âng kiß╗âm\n(─æß║┐n thß╗¥i ─æiß╗âm b├ío c├ío)', None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+(None, None, None, 'Gß╗ù', 'Th├⌐p', 'FRP', 'Sß╗æ t├áu ─æ├│ng mß╗¢i/\nlß║ºn ─æß║ºu', None, None, 'H├áng n─âm', None, None, 'Tr├¬n ─æ├á', None, None, '─Éß╗ïnh kß╗│', None, None, 'Cß║úi ho├ín', None, None)
+(None, None, None, None, None, None, 'Gß╗ù', 'Th├⌐p', 'FRP', 'Gß╗ù', 'Th├⌐p', 'FRP', 'Gß╗ù', 'Th├⌐p', 'FRP', 'Gß╗ù', 'Th├⌐p', 'FRP', 'Gß╗ù', 'Th├⌐p', 'FRP')
+('(1)', '(2)', '(3)', '(4)', '(5)', '(6)', '(7)', '(8)', '(9)', '(10)', '(11)', '(12)', '(13)', '(14)', '(15)', '(16)', '(17)', '(18)', '(19)', '(20)', '(21)')
+(1, 'Lmax tß╗½ 12 ├╖ < 15m', '=D9+E9+F9', '=G9+J9+M9+P9+S9', '=H9+K9+N9+Q9+T9', '=I9+L9+O9+R9+U9', None, None, None, 2, None, None, None, None, None, 1, None, None, None, None, None)
+(2, 'Lmax tß╗½ 15 ├╖ < 20m', '=D10+E10+F10', '=G10+J10+M10+P10+S10', '=H10+K10+N10+Q10+T10', '=I10+L10+O10+R10+U10', None, None, None, None, None, None, 1, None, None, None, 1, None, None, None, None)
+(3, 'Lmax tß╗½ 20 ├╖ < 24m', '=D11+E11+F11', '=G11+J11+M11+P11+S11', '=H11+K11+N11+Q11+T11', '=I11+L11+O11+R11+U11', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+(4, 'Lmax tß╗½ 24 ├╖ < 30m', '=D12+E12+F12', '=G12+J12+M12+P12+S12', '=H12+K12+N12+Q12+T12', '=I12+L12+O12+R12+U12', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+(5, 'Lmax tß╗½ ΓëÑ 30m', '=D13+E13+F13', '=G13+J13+M13+P13+S13', '=H13+K13+N13+Q13+T13', '=I13+L13+O13+R13+U13', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+(None, 'Tß╗òng Cß╗Öng', '=SUM(C9:C13)', '=SUM(D9:D13)', '=SUM(E9:E13)', '=SUM(F9:F13)', '=SUM(G9:G13)', '=SUM(H9:H13)', '=SUM(I9:I13)', '=SUM(J9:J13)', '=SUM(K9:K13)', '=SUM(L9:L13)', '=SUM(M9:M13)', '=SUM(N9:N13)', '=SUM(O9:O13)', '=SUM(P9:P13)', '=SUM(Q9:Q13)', '=SUM(R9:R13)', '=SUM(S9:S13)', '=SUM(T9:T13)', '=SUM(U9:U13)')
+(None, None, None, None, None, None, None, None, None, None, None, None, None, 'NG╞»ß╗£I Lß║¼P', None, None, None, None, None, None, None)
+
+=== Sheet: THANH H├ôA ===
+Max row: 19, Max col: 21
+('(K├¿m theo C├┤ng v─ân sß╗æ      /BC/─ÉKTC ng├áy      /3/2026 cß╗ºa C├┤ng ty CP c├┤ng nghß╗ç cao Ho├áng Bß║úo Minh)', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+('C├öNG TY CP C├öNG NGHß╗å CAO\nHO├ÇNG Bß║óO MINH', None, None, 'Cß╗ÿNG H├ÆA X├â Hß╗ÿI CHß╗ª NGH─¿A VIß╗åT NAM\n─Éß╗Öc Lß║¡p - Tß╗▒ do - Hß║ính ph├║c', None, None, None, None, None, None, None, None, None, None, None, None, 'Mß║½u sß╗æ 04.BC', None, None, None, None)
+(None, None, None, None, None, None, None, None, None, 'Thanh H├│a, ng├áy      th├íng 3 n─âm 2026', None, None, None, None, None, None, None, None, None, None, None)
+('B├üO C├üO T├îNH H├îNH ─É─éNG KIß╗éM T├ÇU C├ü QU├¥ 1 N─éM 2026', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+('TT', 'Nh├│m t├áu', 'Tß╗òng sß╗æ t├áu phß║úi ─æ─âng kiß╗âm', 'Sß╗æ t├áu theo vß║¡t liß╗çu vß╗Å', None, None, 'Tß╗òng sß╗æ t├áu c├í ─æ├ú ─æ─âng kiß╗âm\n(─æß║┐n thß╗¥i ─æiß╗âm b├ío c├ío)', None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+(None, None, None, 'Gß╗ù', 'Th├⌐p', 'FRP', 'Sß╗æ t├áu ─æ├│ng mß╗¢i/\nlß║ºn ─æß║ºu', None, None, 'H├áng n─âm', None, None, 'Tr├¬n ─æ├á', None, None, '─Éß╗ïnh kß╗│', None, None, 'Cß║úi ho├ín', None, None)
+(None, None, None, None, None, None, 'Gß╗ù', 'Th├⌐p', 'FRP', 'Gß╗ù', 'Th├⌐p', 'FRP', 'Gß╗ù', 'Th├⌐p', 'FRP', 'Gß╗ù', 'Th├⌐p', 'FRP', 'Gß╗ù', 'Th├⌐p', 'FRP')
+('(1)', '(2)', '(3)', '(4)', '(5)', '(6)', '(7)', '(8)', '(9)', '(10)', '(11)', '(12)', '(13)', '(14)', '(15)', '(16)', '(17)', '(18)', '(19)', '(20)', '(21)')
+(1, 'Lmax tß╗½ 12 ├╖ < 15m', '=D9+E9+F9', '=G9+J9+M9+P9+S9', '=H9+K9+N9+Q9+T9', '=I9+L9+O9+R9+U9', 1, None, None, None, None, None, None, None, None, None, None, None, 1, None, None)
+(2, 'Lmax tß╗½ 15 ├╖ < 20m', '=D10+E10+F10', '=G10+J10+M10+P10+S10', '=H10+K10+N10+Q10+T10', '=I10+L10+O10+R10+U10', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+(3, 'Lmax tß╗½ 20 ├╖ < 24m', '=D11+E11+F11', '=G11+J11+M11+P11+S11', '=H11+K11+N11+Q11+T11', '=I11+L11+O11+R11+U11', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+(4, 'Lmax tß╗½ 24 ├╖ < 30m', '=D12+E12+F12', '=G12+J12+M12+P12+S12', '=H12+K12+N12+Q12+T12', '=I12+L12+O12+R12+U12', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+(5, 'Lmax tß╗½ ΓëÑ 30m', '=D13+E13+F13', '=G13+J13+M13+P13+S13', '=H13+K13+N13+Q13+T13', '=I13+L13+O13+R13+U13', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+(None, 'Tß╗òng Cß╗Öng', '=SUM(C9:C13)', '=SUM(D9:D13)', '=SUM(E9:E13)', '=SUM(F9:F13)', '=SUM(G9:G13)', '=SUM(H9:H13)', '=SUM(I9:I13)', '=SUM(J9:J13)', '=SUM(K9:K13)', '=SUM(L9:L13)', '=SUM(M9:M13)', '=SUM(N9:N13)', '=SUM(O9:O13)', '=SUM(P9:P13)', '=SUM(Q9:Q13)', '=SUM(R9:R13)', '=SUM(S9:S13)', '=SUM(T9:T13)', '=SUM(U9:U13)')
+(None, None, None, None, None, None, None, None, None, None, None, None, None, 'NG╞»ß╗£I Lß║¼P', None, None, None, None, None, None, None)
+
+DONE - No errors!
