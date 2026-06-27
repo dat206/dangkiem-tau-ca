@@ -18,9 +18,58 @@ from app.models.user import (
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-# ─── Simple in-memory token store (production: dùng Redis / JWT) ─────────────
-# { token: user_id }
-_active_tokens: dict[str, int] = {}
+# ─── Stateless HMAC-signed session token ──────────────────────────────
+import os
+import hmac
+import hashlib
+import base64
+import json
+import time
+
+SECRET_KEY = os.getenv("SECRET_KEY", "dangkiem-tau-ca-default-secret-key-1234567890")
+
+def create_session_token(user_id: int) -> str:
+    payload = {
+        "user_id": user_id,
+        "exp": int(time.time()) + 30 * 24 * 3600  # 30 days expiration
+    }
+    payload_json = json.dumps(payload, separators=(',', ':'))
+    payload_b64 = base64.urlsafe_b64encode(payload_json.encode()).decode().rstrip("=")
+    
+    signature = hmac.new(SECRET_KEY.encode(), payload_b64.encode(), hashlib.sha256).digest()
+    signature_b64 = base64.urlsafe_b64encode(signature).decode().rstrip("=")
+    
+    return f"{payload_b64}.{signature_b64}"
+
+def verify_session_token(token: str) -> int | None:
+    try:
+        parts = token.split(".")
+        if len(parts) != 2:
+            return None
+        payload_b64, signature_b64 = parts
+        
+        # Verify signature
+        expected_signature = hmac.new(SECRET_KEY.encode(), payload_b64.encode(), hashlib.sha256).digest()
+        expected_signature_b64 = base64.urlsafe_b64encode(expected_signature).decode().rstrip("=")
+        
+        if not hmac.compare_digest(signature_b64, expected_signature_b64):
+            return None
+        
+        # Decode payload
+        rem = len(payload_b64) % 4
+        if rem > 0:
+            payload_b64 += "=" * (4 - rem)
+        
+        payload_json = base64.urlsafe_b64decode(payload_b64).decode()
+        payload = json.loads(payload_json)
+        
+        if payload.get("exp", 0) < time.time():
+            return None
+            
+        return payload.get("user_id")
+    except Exception:
+        return None
+
 
 
 def _hash_password(password: str) -> str:
@@ -41,7 +90,7 @@ def get_current_user(
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Chưa đăng nhập.")
     token = authorization.split(" ", 1)[1]
-    user_id = _active_tokens.get(token)
+    user_id = verify_session_token(token)
     if not user_id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token không hợp lệ hoặc đã hết hạn.")
     user = db.query(UserORM).filter(UserORM.id == user_id, UserORM.is_active == True).first()
@@ -90,8 +139,7 @@ def login(payload: UserLoginRequest, db: Session = Depends(get_db)):
             detail="Tài khoản đã bị vô hiệu hoá. Liên hệ quản trị viên.",
         )
     # Generate session token
-    token = secrets.token_urlsafe(32)
-    _active_tokens[token] = user.id
+    token = create_session_token(user.id)
     # Update last_login
     user.last_login = datetime.utcnow()
     db.commit()
@@ -193,9 +241,6 @@ def delete_user(
 @router.post("/logout", status_code=status.HTTP_200_OK)
 def logout(authorization: str = Header(None)):
     """Đăng xuất — vô hiệu hoá token."""
-    if authorization and authorization.startswith("Bearer "):
-        token = authorization.split(" ", 1)[1]
-        _active_tokens.pop(token, None)
     return {"message": "Đã đăng xuất thành công."}
 
 
