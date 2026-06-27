@@ -222,15 +222,7 @@ def generate_quarterly_summary_excel(vessels: List[Any], quarter: int, year: int
         output.seek(0)
         return output
 
-    # Remove default sheet
-    if "Sheet" in wb.sheetnames:
-        wb.remove(wb["Sheet"])
-
-    for prov_code in provinces_in_data:
-        prov_name = get_province_name(prov_code).upper()
-
-        # Valid sheet name max length is 31
-        ws = wb.create_sheet(title=prov_name[:31])
+    def fill_sheet(ws, is_summary: bool, target_provinces: List[str], appendix_index: int):
         ws.sheet_view.showGridLines = False
 
         # ============================================================
@@ -259,11 +251,12 @@ def generate_quarterly_summary_excel(vessels: List[Any], quarter: int, year: int
         ws.merge_cells("A1:U1")
         c1 = ws["A1"]
         c1.value = (
-            f"(Kèm theo Công văn số      /BC/ĐKTC ngày      /{quarter * 3}/{year} "
+            f"Phụ lục {appendix_index}\n"
+            f"(kèm theo Công văn số      /BC/ĐKTC ngày      /{quarter * 3}/{year} "
             "của Công ty CP công nghệ cao Hoàng Bảo Minh)"
         )
         c1.font = Font(name="Times New Roman", size=11, italic=True)
-        c1.alignment = Alignment(horizontal="center", vertical="center")
+        c1.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
         # ============================================================
         # ROW 2: Tên công ty (A2) + CỘNG HÒA (D2) + Mẫu số (Q2)
@@ -300,29 +293,16 @@ def generate_quarterly_summary_excel(vessels: List[Any], quarter: int, year: int
         # ============================================================
         ws.merge_cells("A4:U4")
         c4 = ws["A4"]
-        c4.value = f"BÁO CÁO TÌNH HÌNH ĐĂNG KIỂM TÀU CÁ QUÝ {quarter} NĂM {year}"
+        if is_summary:
+            c4.value = f"BÁO CÁO TỔNG HỢP TÌNH HÌNH ĐĂNG KIỂM TÀU CÁ QUÝ {quarter} NĂM {year}"
+        else:
+            c4.value = f"BÁO CÁO TÌNH HÌNH ĐĂNG KIỂM TÀU CÁ QUÝ {quarter} NĂM {year}"
         c4.font = Font(name="Times New Roman", size=14, bold=True)
         c4.alignment = Alignment(horizontal="center", vertical="center")
 
-        # Subtitle province below title
-        ws.merge_cells("A4b:U4b") if False else None  # skip placeholder
-
         # ============================================================
         # ROWS 5-7: Header bảng 3 dòng
-        # Layout (21 cột A-U):
-        #   A=1  : TT                      (merge 5:7)
-        #   B=2  : Nhóm tàu               (merge 5:7)
-        #   C=3  : Tổng số tàu phải ĐK   (merge 5:7)
-        #   D=4  : Số tàu VLV Gỗ         (merge 5:7)
-        #   E=5  : Số tàu VLV Thép       (merge 5:7)
-        #   F=6  : Số tàu VLV FRP        (merge 5:7)
-        #   G=7  H=8  I=9  : Đóng mới/lần đầu (Gỗ/Thép/FRP)
-        #   J=10 K=11 L=12 : Hàng năm         (Gỗ/Thép/FRP)
-        #   M=13 N=14 O=15 : Trên đà           (Gỗ/Thép/FRP)
-        #   P=16 Q=17 R=18 : Định kỳ           (Gỗ/Thép/FRP)
-        #   S=19 T=20 U=21 : Cải hoán          (Gỗ/Thép/FRP)
         # ============================================================
-        # Row 5 - Level 1
         ws.merge_cells("A5:A7"); write_h(5, 1, "TT")
         ws.merge_cells("B5:B7"); write_h(5, 2, "Nhóm tàu")
         ws.merge_cells("C5:C7"); write_h(5, 3, "Tổng số tàu phải đăng kiểm")
@@ -400,7 +380,7 @@ def generate_quarterly_summary_excel(vessels: List[Any], quarter: int, year: int
             # Cols G-U: fill inspection data by type × material
             for (insp_cat, base_col) in insp_col_map:
                 for mat_idx, mat in enumerate(materials_order):
-                    val = count_for_cell(vessels, prov_code, lg_code, mat, insp_cat)
+                    val = sum(count_for_cell(vessels, p_code, lg_code, mat, insp_cat) for p_code in target_provinces)
                     col = base_col + mat_idx
                     cell = ws.cell(row=r, column=col, value=val if val > 0 else "")
                     cell.font = normal_font
@@ -489,7 +469,7 @@ def generate_quarterly_summary_excel(vessels: List[Any], quarter: int, year: int
         # ============================================================
         # ROW HEIGHTS
         # ============================================================
-        ws.row_dimensions[1].height = 22
+        ws.row_dimensions[1].height = 40
         ws.row_dimensions[2].height = 35
         ws.row_dimensions[3].height = 20
         ws.row_dimensions[4].height = 28
@@ -497,6 +477,21 @@ def generate_quarterly_summary_excel(vessels: List[Any], quarter: int, year: int
         ws.row_dimensions[6].height = 35
         ws.row_dimensions[7].height = 20
         ws.row_dimensions[8].height = 18
+
+    # 1. Create the TỔNG HỢP sheet first
+    ws_summary = wb.create_sheet(title="TỔNG HỢP")
+    fill_sheet(ws_summary, is_summary=True, target_provinces=provinces_in_data, appendix_index=2)
+
+    # 2. Create individual sheets for each province
+    for idx, prov_code in enumerate(provinces_in_data):
+        prov_name = get_province_name(prov_code).upper()
+        # Valid sheet name max length is 31
+        ws_prov = wb.create_sheet(title=prov_name[:31])
+        fill_sheet(ws_prov, is_summary=False, target_provinces=[prov_code], appendix_index=idx + 3)
+
+    # Remove default sheet if exists
+    if "Sheet" in wb.sheetnames:
+        wb.remove(wb["Sheet"])
 
     output = BytesIO()
     wb.save(output)
