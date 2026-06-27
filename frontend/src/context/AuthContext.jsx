@@ -64,51 +64,7 @@ export function AuthProvider({ children }) {
 
   // ── Login ───────────────────────────────────────────────────────────────────
   const login = useCallback(async (email, password, remember = true) => {
-    const isDefaultAdmin = email === 'admin@dangkiem.gov.vn' && password === 'Admin@123';
-
-    if (isDefaultAdmin) {
-      // Đăng nhập nhanh lập tức cho tài khoản admin mặc định để tránh bị delay
-      const mockUser = {
-        id: 1,
-        full_name: "Hồ Tuấn Minh",
-        email: "admin@dangkiem.gov.vn",
-        role: "admin",
-        is_active: true
-      };
-      const mockToken = "mock_token_admin_" + Date.now();
-
-      const storage = remember ? localStorage : sessionStorage;
-      storage.setItem('auth_token', mockToken);
-      storage.setItem('auth_user', JSON.stringify(mockUser));
-      setToken(mockToken);
-      setUser(mockUser);
-
-      // Gọi API login thực tế chạy ngầm để lấy token chuẩn từ server
-      loginApi(email, password)
-        .then((data) => {
-          storage.setItem('auth_token', data.token);
-          storage.setItem('auth_user', JSON.stringify(data.user));
-          setToken(data.token);
-          setUser(data.user);
-        })
-        .catch((err) => {
-          console.warn("Background login sync failed:", err);
-          if (err.response && err.response.status === 401) {
-            // Trường hợp mật khẩu thực sự sai (ví dụ mật khẩu admin đã bị đổi trên DB)
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('auth_user');
-            sessionStorage.removeItem('auth_token');
-            sessionStorage.removeItem('auth_user');
-            setToken(null);
-            setUser(null);
-            window.location.reload();
-          }
-        });
-
-      return { user: mockUser, token: mockToken };
-    }
-
-    // Với các tài khoản khác, thực hiện đăng nhập bình thường qua API
+    // Thực hiện đăng nhập bình thường qua API cho tất cả các tài khoản
     const data = await loginApi(email, password);
     const storage = remember ? localStorage : sessionStorage;
     storage.setItem('auth_token', data.token);
