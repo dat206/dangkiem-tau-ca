@@ -6,6 +6,7 @@ Uses openpyxl for Excel creation and returns BytesIO for streaming.
 
 from io import BytesIO
 from typing import List, Dict, Any
+from datetime import date, datetime
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
@@ -20,6 +21,24 @@ from app.services.data_processor import get_province_name, count_for_cell, PROVI
 
 # Define the standard province order for columns
 PROVINCE_CODES_ORDER = ["QN", "HP", "TB", "NĐ", "NB", "TH", "NA", "HT", "QB", "QT", "QNg"]
+
+
+def _to_date_object(val) -> Any:
+    """Helper to convert string or date/datetime values into a datetime.date object for openpyxl"""
+    if not val:
+        return None
+    if isinstance(val, date):
+        if isinstance(val, datetime):
+            return val.date()
+        return val
+    if isinstance(val, str):
+        val = val.strip()
+        for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"):
+            try:
+                return datetime.strptime(val, fmt).date()
+            except ValueError:
+                continue
+    return val
 
 
 def get_inspection_type_label(inspection_type: str) -> str:
@@ -95,9 +114,9 @@ def generate_vessel_excel(data: List[Any]) -> BytesIO:
         ws.cell(row=row_idx, column=1, value=row_idx - 1).style = "data_number_style"
 
         # Date formatting for Issued Date
-        cell_date = ws.cell(row=row_idx, column=2, value=vessel.issued_date)
+        cell_date = ws.cell(row=row_idx, column=2, value=_to_date_object(vessel.issued_date))
         cell_date.style = "data_text_style"
-        cell_date.number_format = "dd/mm/yyyy"
+        cell_date.number_format = "dd-mm-yyyy"
 
         ws.cell(row=row_idx, column=3, value=vessel.owner_name or "").style = "data_text_style"
         ws.cell(row=row_idx, column=4, value=vessel.address_short or vessel.address or "").style = "data_text_style"
@@ -130,9 +149,9 @@ def generate_vessel_excel(data: List[Any]) -> BytesIO:
         ws.cell(row=row_idx, column=8, value=get_inspection_type_number(vessel.inspection_type)).style = "data_text_style"
         
         # Valid Until Date
-        cell_valid = ws.cell(row=row_idx, column=9, value=vessel.valid_until)
+        cell_valid = ws.cell(row=row_idx, column=9, value=_to_date_object(vessel.valid_until))
         cell_valid.style = "data_text_style"
-        cell_valid.number_format = "dd/mm/yyyy"
+        cell_valid.number_format = "dd-mm-yyyy"
         
         ws.cell(row=row_idx, column=10, value=vessel.fishing_gear or "").style = "data_text_style"
 
