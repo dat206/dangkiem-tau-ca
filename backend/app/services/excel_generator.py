@@ -401,7 +401,7 @@ def generate_quarterly_summary_excel(vessels: List[Any], quarter: int, year: int
                 for mat_idx, mat in enumerate(materials_order):
                     val = sum(count_for_cell(vessels, p_code, lg_code, mat, insp_cat) for p_code in target_provinces)
                     col = base_col + mat_idx
-                    cell = ws.cell(row=r, column=col, value=val if val > 0 else "")
+                    cell = ws.cell(row=r, column=col, value=val)
                     cell.font = normal_font
                     cell.alignment = center_align
 
