@@ -309,6 +309,21 @@ def parse_vessel_docx(file_path: str) -> VesselData:
                 if cap_tau != "khong_xac_dinh":
                     break
 
+    # 6.5. Technical status
+    trang_thai_kt = ""
+    if len(paragraphs) > 10:
+        p10 = normalize_text(paragraphs[10].text)
+        if ":" in p10:
+            trang_thai_kt = p10.split(":")[-1].strip()
+            trang_thai_kt = strip_english_suffix(trang_thai_kt)
+    if not trang_thai_kt:
+        m = re.search(r"Trạng\s*thái\s*k[ỹĩ]\s*thuật[^:]*:\s*([^;|]+)", full_text, re.IGNORECASE)
+        if m:
+            raw = m.group(1).strip()
+            if raw.lower().startswith("(technical status)"):
+                raw = raw[18:].strip(": \t")
+            trang_thai_kt = strip_english_suffix(raw)
+
     # 7. Dates
     # Inspection date
     ngay_kt = None
@@ -351,6 +366,7 @@ def parse_vessel_docx(file_path: str) -> VesselData:
             material=vat_lieu,
             inspection_type=hinh_thuc_kiem_tra,
             vessel_class=cap_tau,
+            technical_status=trang_thai_kt,
             inspection_date=ngay_kt,
             valid_until=han_dk,
             issued_date=ngay_cap,

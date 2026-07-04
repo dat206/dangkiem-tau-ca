@@ -592,6 +592,16 @@ const Vessels = () => {
                     {displayValue(selectedVessel.expire)}
                   </span>
                 </div>
+
+                <div className={styles.detailItem}>
+                  <span className={styles.detailLabel}>Cấp tàu</span>
+                  <span className={styles.detailValue}>{displayValue(selectedVessel.vessel_class_label || selectedVessel.vessel_class)}</span>
+                </div>
+
+                <div className={`${styles.detailItem} ${styles.fullWidth}`}>
+                  <span className={styles.detailLabel}>Trạng thái kỹ thuật</span>
+                  <span className={styles.detailValue}>{displayValue(selectedVessel.technical_status)}</span>
+                </div>
               </div>
             </div>
 

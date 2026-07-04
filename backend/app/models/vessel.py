@@ -60,6 +60,7 @@ class VesselData(BaseModel):
     inspection_type: str = "khong_xac_dinh"
     length_group: str = "khong_xac_dinh"
     vessel_class: Optional[str] = "khong_xac_dinh"
+    technical_status: Optional[str] = ""
     inspection_date: date
     valid_until: Optional[date] = None
     issued_date: Optional[date] = None
@@ -129,6 +130,7 @@ class VesselORM(Base):
     inspection_type = Column(String(50), nullable=True)
     length_group = Column(String(20), nullable=True)
     vessel_class = Column(String(20))
+    technical_status = Column(String(255), nullable=True)
 
     # Các cột date – inspection_date được thêm trong migration 0003
     inspection_date = Column(Date, nullable=True, index=True)

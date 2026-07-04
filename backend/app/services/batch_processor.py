@@ -84,6 +84,7 @@ def run_batch_processor_api(file_paths_with_names: List[tuple], db: Session, max
                         "inspection_type": file_data.get("inspection_type", "khong_xac_dinh"),
                         "length_group": len_group,
                         "vessel_class": file_data.get("vessel_class", "khong_xac_dinh"),
+                        "technical_status": file_data.get("technical_status", ""),
                         "inspection_date": ins_date,
                         "valid_until": file_data.get("valid_until"),
                         "issued_date": file_data.get("issued_date"),

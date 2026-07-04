@@ -127,6 +127,18 @@ def _apply_vessel_filters(
     return query
 
 
+def get_vessel_class_label(vessel_class: Optional[str]) -> str:
+    """Map DB vessel class code to Vietnamese label"""
+    mapping = {
+        "khong_han_che": "Không hạn chế",
+        "han_che_1": "Hạn chế I",
+        "han_che_2": "Hạn chế II",
+        "han_che_3": "Hạn chế III",
+        "khong_xac_dinh": "Không xác định",
+    }
+    return mapping.get(vessel_class, vessel_class or "Không xác định")
+
+
 def _serialize_vessel(item: VesselORM) -> dict:
     return {
         "id": item.id,
@@ -152,6 +164,9 @@ def _serialize_vessel(item: VesselORM) -> dict:
         "issued_date": _format_date(item.issued_date),
         "job": item.fishing_gear or "",
         "fishing_gear": item.fishing_gear or "",
+        "vessel_class": item.vessel_class or "",
+        "vessel_class_label": get_vessel_class_label(item.vessel_class),
+        "technical_status": item.technical_status or "",
         "source_filename": item.source_filename or "",
         "created_at": _format_datetime(item.created_at),
     }
