@@ -74,7 +74,7 @@ def test_get_report_history_filters_by_quarter_and_year():
 def test_download_report_history_returns_saved_file(tmp_path):
     report_file = tmp_path / "report_q1_2026.zip"
     report_file.write_bytes(b"zip-content")
-    report_id = add_history_item(file_path=str(report_file))
+    report_id = add_history_item(file_path=str(report_file), created_at=datetime.utcnow())
 
     client = TestClient(app)
     response = client.get(f"/api/reports/history/{report_id}/download")

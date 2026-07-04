@@ -1,4 +1,7 @@
 
+import json
+import shutil
+import subprocess
 import tempfile
 import zipfile
 from datetime import date, datetime, timedelta
@@ -6,7 +9,7 @@ from pathlib import Path
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query, status
 from fastapi.responses import FileResponse
-from sqlalchemy import extract
+from sqlalchemy import extract, func
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.vessel import VesselORM, ReportHistoryORM
@@ -16,6 +19,8 @@ router = APIRouter(
     prefix="/reports",
     tags=["reports"]
 )
+EXTRACT_DIR = Path("temp_extracted").resolve()
+EXTRACT_DIR.mkdir(exist_ok=True)
 COASTAL_PROVINCES = [
     {"code": "QN", "name": "Quảng Ninh"},
     {"code": "HP", "name": "Hải Phòng"},
@@ -57,7 +62,7 @@ def _parse_vessel_date(value: str | date | datetime | None) -> Optional[datetime
     return None
 def _vessel_in_period(vessel: VesselORM, quarter: int, year: int) -> bool:
     start, end = _quarter_date_range(quarter, year)
-    date_value = _parse_vessel_date(vessel.inspection_date) or _parse_vessel_date(vessel.issued_date) or vessel.created_at
+    date_value = _parse_vessel_date(vessel.issued_date) or _parse_vessel_date(vessel.inspection_date) or vessel.created_at
     return bool(date_value and start <= date_value < end)
 def _split_csv(value: str | None) -> list[str]:
     if not value:
@@ -279,41 +284,161 @@ async def generate_report_from_db(
         media_type="application/zip",
         filename=zip_filename,
     )
+@router.post("/extract-archive")
+async def extract_archive(file: UploadFile = File(...)):
+    filename = file.filename
+    if not (filename.endswith(".zip") or filename.endswith(".rar")):
+        raise HTTPException(
+            status_code=400,
+            detail="Chỉ hỗ trợ giải nén file .zip hoặc .rar"
+        )
+    
+    # Save the uploaded archive file
+    with tempfile.NamedTemporaryFile(delete=False, suffix=Path(filename).suffix) as tmp:
+        content = await file.read()
+        tmp.write(content)
+        archive_path = Path(tmp.name)
+        
+    extracted_files = []
+    # Create a unique subdirectory for this archive
+    temp_sub_dir = Path(tempfile.mkdtemp(dir=EXTRACT_DIR))
+    
+    try:
+        if filename.endswith(".zip"):
+            with zipfile.ZipFile(archive_path, 'r') as zip_ref:
+                for zip_info in zip_ref.infolist():
+                    if zip_info.filename.lower().endswith(".docx"):
+                        filename_only = Path(zip_info.filename).name
+                        if filename_only and not filename_only.startswith("~$"):
+                            target_path = temp_sub_dir / filename_only
+                            with zip_ref.open(zip_info) as source, open(target_path, "wb") as target:
+                                shutil.copyfileobj(source, target)
+        elif filename.endswith(".rar"):
+            success = False
+            # Try 7-Zip
+            if Path(r"C:\Program Files\7-Zip\7z.exe").exists():
+                try:
+                    cmd = [
+                        r"C:\Program Files\7-Zip\7z.exe",
+                        "x",
+                        str(archive_path),
+                        f"-o{temp_sub_dir}",
+                        "*.docx",
+                        "-r",
+                        "-y"
+                    ]
+                    res = subprocess.run(cmd, capture_output=True, text=True)
+                    if res.returncode == 0:
+                        success = True
+                except Exception:
+                    pass
+            
+            # Try WinRAR
+            if not success and Path(r"C:\Program Files\WinRAR\UnRAR.exe").exists():
+                try:
+                    cmd = [
+                        r"C:\Program Files\WinRAR\UnRAR.exe",
+                        "x",
+                        "-y",
+                        str(archive_path),
+                        "*.docx",
+                        str(temp_sub_dir) + "\\"
+                    ]
+                    res = subprocess.run(cmd, capture_output=True, text=True)
+                    if res.returncode == 0:
+                        success = True
+                except Exception:
+                    pass
+            
+            if not success:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Không thể giải nén file .rar trên máy chủ. Đảm bảo có cài đặt WinRAR hoặc 7-Zip."
+                )
+                
+        # Find all extracted .docx files
+        for docx_file in temp_sub_dir.rglob("*.docx"):
+            if not docx_file.name.startswith("~$"):
+                extracted_files.append({
+                    "filename": docx_file.name,
+                    "temp_path": str(docx_file.resolve()),
+                    "size": docx_file.stat().st_size
+                })
+                
+        return {
+            "message": f"Giải nén thành công, tìm thấy {len(extracted_files)} file .docx",
+            "files": extracted_files
+        }
+    except Exception as e:
+        if temp_sub_dir.exists():
+            shutil.rmtree(temp_sub_dir)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Lỗi khi giải nén file: {str(e)}"
+        )
+    finally:
+        if archive_path.exists():
+            archive_path.unlink()
+
+
 @router.post("/upload-batch")
 async def upload_vessel_documents(
-    files: List[UploadFile] = File(...),
+    files: List[UploadFile] = File(default=[]),
+    temp_paths: Optional[str] = Form(None),
     db: Session = Depends(get_db)
 ):
     """
     API tiếp nhận nhiều file giấy chứng nhận (.docx) từ trình duyệt,
+    hoặc nhận các đường dẫn file tạm đã giải nén trên máy chủ,
     thực hiện gọi bộ xử lý đa luồng và phản hồi kết quả về Frontend.
     """
-    if not files:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
-            detail="Không có file nào được chọn để tải lên."
-        )
-        
     saved_temp_paths = []
     try:
-        for file in files:
-            if not file.filename.endswith('.docx'):
-                continue
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
-                content = await file.read()
-                tmp.write(content)
-                saved_temp_paths.append((Path(tmp.name), file.filename))
+        if files:
+            for file in files:
+                if not file.filename.endswith('.docx'):
+                    continue
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
+                    content = await file.read()
+                    tmp.write(content)
+                    saved_temp_paths.append((Path(tmp.name), file.filename))
         
+        if temp_paths:
+            try:
+                paths_list = json.loads(temp_paths)
+                for path_str in paths_list:
+                    p = Path(path_str).resolve()
+                    if EXTRACT_DIR in p.parents and p.exists():
+                        saved_temp_paths.append((p, p.name))
+            except Exception as e:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Lỗi định dạng temp_paths: {str(e)}"
+                )
+                
         if not saved_temp_paths:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, 
-                detail="Không tìm thấy file Word định dạng .docx hợp lệ."
+                detail="Không tìm thấy file Word định dạng .docx hợp lệ để xử lý."
             )
         
         from app.services.batch_processor import run_batch_processor_api
         processing_results = run_batch_processor_api(file_paths_with_names=saved_temp_paths, db=db, max_threads=4)
         success_count = sum(1 for item in processing_results if item['status'] == 'Thành công')
         
+        # Cleanup subdirectories for extracted temp files
+        if temp_paths:
+            dirs_to_delete = set()
+            for p, _ in saved_temp_paths:
+                if EXTRACT_DIR in p.parents:
+                    dirs_to_delete.add(p.parent)
+            for d in dirs_to_delete:
+                try:
+                    if d.exists():
+                        shutil.rmtree(d)
+                except OSError:
+                    pass
+                    
         return {
             "message": f"Xử lý hoàn tất {len(processing_results)} file tài liệu.",
             "total": len(processing_results),
@@ -329,8 +454,12 @@ async def upload_vessel_documents(
     finally:
         for item in saved_temp_paths:
             path = item[0] if isinstance(item, tuple) else item
-            if path.exists():
-                path.unlink()
+            if EXTRACT_DIR not in path.parents:
+                try:
+                    if path.exists():
+                        path.unlink()
+                except OSError:
+                    pass
 @router.post("/generate-report")
 async def generate_report(
     files: List[UploadFile] = File(...),
@@ -378,7 +507,7 @@ async def generate_report(
                 detail="Tất cả các file tải lên đều trích xuất lỗi."
             )
             
-        # 3. Lấy dữ liệu từ database cho quý này (dựa vào inspection_date)
+        # 3. Lấy dữ liệu từ database cho quý này (dựa vào issued_date, fallback sang inspection_date)
         if quarter == 1:
             months = [1, 2, 3]
         elif quarter == 2:
@@ -388,9 +517,10 @@ async def generate_report(
         else:
             months = [10, 11, 12]
             
+        effective_date = func.coalesce(VesselORM.issued_date, VesselORM.inspection_date)
         vessels = db.query(VesselORM).filter(
-            extract('year', VesselORM.inspection_date) == year,
-            extract('month', VesselORM.inspection_date).in_(months)
+            extract('year', effective_date) == year,
+            extract('month', effective_date).in_(months)
         ).all()
         
         # 4. Tạo các tệp Excel trong bộ nhá»›

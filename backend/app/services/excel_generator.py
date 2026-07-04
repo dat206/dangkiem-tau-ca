@@ -79,6 +79,18 @@ def get_length_group_label(length_group: str) -> str:
     return mapping.get(length_group, "")
 
 
+def get_vessel_class_label(vessel_class: str) -> str:
+    """Map DB vessel class code to Vietnamese label"""
+    mapping = {
+        "khong_han_che": "Không hạn chế",
+        "han_che_1": "Hạn chế I",
+        "han_che_2": "Hạn chế II",
+        "han_che_3": "Hạn chế III",
+        "khong_xac_dinh": "Không xác định",
+    }
+    return mapping.get(vessel_class, vessel_class or "Không xác định")
+
+
 def generate_vessel_excel(data: List[Any]) -> BytesIO:
     """
     Generate "Bảng kê tổng hợp" (TỔNG HỢP GHI SỔ THỦ TỤC)
@@ -96,7 +108,8 @@ def generate_vessel_excel(data: List[Any]) -> BytesIO:
 
     headers = [
         "STT", "Ngày, tháng", "Họ và tên", "Địa chỉ", "Số đăng ký", 
-        "Máy chính (KW)", "Chiều dài", "Hình thức kiểm tra", "Hạn Đk", "NGHỀ"
+        "Máy chính (KW)", "Chiều dài", "Hình thức kiểm tra", "Hạn Đk", "NGHỀ",
+        "Cấp tàu", "Trạng thái kỹ thuật"
     ]
     headers += inspection_codes
     headers += length_group_labels
@@ -154,16 +167,18 @@ def generate_vessel_excel(data: List[Any]) -> BytesIO:
         cell_valid.number_format = "dd-mm-yyyy"
         
         ws.cell(row=row_idx, column=10, value=vessel.fishing_gear or "").style = "data_text_style"
+        ws.cell(row=row_idx, column=11, value=get_vessel_class_label(vessel.vessel_class)).style = "data_text_style"
+        ws.cell(row=row_idx, column=12, value=vessel.technical_status or "").style = "data_text_style"
 
         # Xs for inspection codes
         v_ins_lbl = get_inspection_type_label(vessel.inspection_type)
-        for idx, code in enumerate(inspection_codes, start=11):
+        for idx, code in enumerate(inspection_codes, start=13):
             cell = ws.cell(row=row_idx, column=idx)
             cell.value = "X" if code == v_ins_lbl else ""
             cell.style = "data_text_style"
 
         # Xs for length groups
-        start_length_col = 11 + len(inspection_codes)
+        start_length_col = 13 + len(inspection_codes)
         v_lg_lbl = get_length_group_label(vessel.length_group)
         for idx, label in enumerate(length_group_labels, start=start_length_col):
             cell = ws.cell(row=row_idx, column=idx)
@@ -195,7 +210,7 @@ def generate_vessel_excel(data: List[Any]) -> BytesIO:
         cell = ws.cell(row=total_row, column=col_idx)
         cell.style = "total_style"
         # Count Xs
-        if col_idx >= 11:
+        if col_idx >= 13:
             col_letter = get_column_letter(col_idx)
             cell.value = f'=COUNTIF({col_letter}2:{col_letter}{total_row - 1}, "X")'
             cell.number_format = "#,##0"
@@ -210,6 +225,8 @@ def generate_vessel_excel(data: List[Any]) -> BytesIO:
     ws.column_dimensions["H"].width = 18
     ws.column_dimensions["I"].width = 14
     ws.column_dimensions["J"].width = 20
+    ws.column_dimensions["K"].width = 16
+    ws.column_dimensions["L"].width = 28
 
     apply_full_border(ws, start_row=header_row, end_row=total_row, start_col=1, end_col=len(headers))
     ws.freeze_panes = "A2"

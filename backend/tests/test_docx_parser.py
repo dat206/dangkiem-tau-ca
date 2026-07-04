@@ -36,3 +36,18 @@ def test_extract_owner_name_full_name():
 def test_extract_owner_name_with_english_suffix():
     sample_text = "Owner: Hoàng Văn Sinh ( Vessel's owner): Nguyễn Văn A"
     assert extract_owner_name(sample_text) == "Hoàng Văn Sinh"
+
+
+def test_vessel_data_with_technical_status():
+    from app.models.vessel import VesselData
+    from datetime import date
+    v = VesselData(
+        registration_no="QN-90523-TS",
+        province_code="QN",
+        lmax=21.5,
+        inspection_type="dinh_ky",
+        vessel_class="han_che_2",
+        technical_status="Thoả mãn quy chuẩn",
+        inspection_date=date(2026, 5, 9),
+    )
+    assert v.technical_status == "Thoả mãn quy chuẩn"

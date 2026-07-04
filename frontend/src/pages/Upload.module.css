@@ -243,3 +243,29 @@
     flex: none;
   }
 }
+
+.archiveItem {
+  border-color: #f59e0b !important;
+  background-color: rgba(245, 158, 11, 0.04) !important;
+}
+
+.extractBtn {
+  font-size: 11px;
+  font-weight: 600;
+  color: #ffffff;
+  background-color: #f59e0b;
+  border: none;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm, 4px);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.extractBtn:hover:not(:disabled) {
+  background-color: #d97706;
+}
+
+.extractBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
