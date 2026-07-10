@@ -90,6 +90,16 @@ def run_batch_processor_api(file_paths_with_names: List[tuple], db: Session, max
                         "issued_date": file_data.get("issued_date"),
                         "fishing_gear": file_data.get("fishing_gear", ""),
                         "source_filename": file_data.get("file_name") or file_data.get("source_filename", ""),
+                        "build_year": file_data.get("build_year", ""),
+                        "build_place": file_data.get("build_place", ""),
+                        "gross_tonnage": file_data.get("gross_tonnage", 0.0),
+                        "crew_limit": file_data.get("crew_limit", 0),
+                        "bmax": file_data.get("bmax", 0.0),
+                        "depth": file_data.get("depth", 0.0),
+                        "engine_model": file_data.get("engine_model", ""),
+                        "engine_serial": file_data.get("engine_serial", ""),
+                        "engine_build_info": file_data.get("engine_build_info", ""),
+                        "allowed_area": file_data.get("allowed_area", ""),
                     }
                     
                     if existing_vessel:

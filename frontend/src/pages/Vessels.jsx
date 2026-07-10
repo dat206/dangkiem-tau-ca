@@ -530,77 +530,145 @@ const Vessels = () => {
             </div>
 
             <div className={styles.drawerContent}>
-              <div className={styles.detailGrid}>
-                <div className={`${styles.detailItem} ${styles.fullWidth}`}>
-                  <span className={styles.detailLabel}>Số đăng ký</span>
-                  <span className={`${styles.detailValue} ${styles.primaryValue}`}>{displayValue(selectedVessel.reg)}</span>
-                </div>
+              <div className={styles.detailSection}>
+                <h4 className={styles.sectionTitle}>Thông tin chung</h4>
+                <div className={styles.detailGrid}>
+                  <div className={`${styles.detailItem} ${styles.fullWidth}`}>
+                    <span className={styles.detailLabel}>Số đăng ký</span>
+                    <span className={`${styles.detailValue} ${styles.primaryValue}`}>{displayValue(selectedVessel.reg)}</span>
+                  </div>
 
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>Chủ tàu</span>
-                  <span className={styles.detailValue}>{displayValue(selectedVessel.owner)}</span>
-                </div>
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Chủ tàu</span>
+                    <span className={styles.detailValue}>{displayValue(selectedVessel.owner)}</span>
+                  </div>
 
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>Tỉnh/TP</span>
-                  <span className={styles.detailValue}>{displayValue(selectedVessel.prov)}</span>
-                </div>
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Tỉnh/TP</span>
+                    <span className={styles.detailValue}>{displayValue(selectedVessel.prov)}</span>
+                  </div>
 
-                <div className={`${styles.detailItem} ${styles.fullWidth}`}>
-                  <span className={styles.detailLabel}>Địa chỉ</span>
-                  <span className={styles.detailValue}>{displayValue(selectedVessel.address)}</span>
-                </div>
+                  <div className={`${styles.detailItem} ${styles.fullWidth}`}>
+                    <span className={styles.detailLabel}>Địa chỉ</span>
+                    <span className={styles.detailValue}>{displayValue(selectedVessel.address)}</span>
+                  </div>
 
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>Chiều dài lớn nhất (Lmax)</span>
-                  <span className={styles.detailValue}>{displayValue(selectedVessel.lmax)} m</span>
+                  <div className={`${styles.detailItem} ${styles.fullWidth}`}>
+                    <span className={styles.detailLabel}>Trạng thái kỹ thuật</span>
+                    <span className={styles.detailValue}>{displayValue(selectedVessel.technical_status)}</span>
+                  </div>
                 </div>
+              </div>
 
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>Công suất máy</span>
-                  <span className={styles.detailValue}>{displayValue(selectedVessel.power_kw)} kW</span>
+              <div className={styles.detailSection}>
+                <h4 className={styles.sectionTitle}>Kích thước & Trọng tải</h4>
+                <div className={styles.detailGrid}>
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Chiều dài lớn nhất (Lmax)</span>
+                    <span className={styles.detailValue}>{selectedVessel.lmax ? `${selectedVessel.lmax} m` : '-'}</span>
+                  </div>
+
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Chiều rộng lớn nhất (Bmax)</span>
+                    <span className={styles.detailValue}>{selectedVessel.bmax ? `${selectedVessel.bmax} m` : '-'}</span>
+                  </div>
+
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Chiều cao mạn (D)</span>
+                    <span className={styles.detailValue}>{selectedVessel.depth ? `${selectedVessel.depth} m` : '-'}</span>
+                  </div>
+
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Nhóm Lmax</span>
+                    <span className={styles.detailValue}>{displayValue(selectedVessel.length_label)}</span>
+                  </div>
+
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Tổng dung tích</span>
+                    <span className={styles.detailValue}>{selectedVessel.gross_tonnage ? `${selectedVessel.gross_tonnage} GT` : '-'}</span>
+                  </div>
+
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Số thuyền viên tối đa</span>
+                    <span className={styles.detailValue}>{selectedVessel.crew_limit ? `${selectedVessel.crew_limit} người` : '-'}</span>
+                  </div>
+
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Vật liệu vỏ</span>
+                    <span className={styles.detailValue}>{displayValue(selectedVessel.material)}</span>
+                  </div>
                 </div>
+              </div>
 
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>Vật liệu vỏ</span>
-                  <span className={styles.detailValue}>{displayValue(selectedVessel.material)}</span>
+              <div className={styles.detailSection}>
+                <h4 className={styles.sectionTitle}>Chế tạo & Máy chính</h4>
+                <div className={styles.detailGrid}>
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Năm đóng</span>
+                    <span className={styles.detailValue}>{displayValue(selectedVessel.build_year)}</span>
+                  </div>
+
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Nơi đóng</span>
+                    <span className={styles.detailValue}>{displayValue(selectedVessel.build_place)}</span>
+                  </div>
+
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Ký hiệu máy chính</span>
+                    <span className={styles.detailValue}>{displayValue(selectedVessel.engine_model)}</span>
+                  </div>
+
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Số máy chính</span>
+                    <span className={styles.detailValue}>{displayValue(selectedVessel.engine_serial)}</span>
+                  </div>
+
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Nơi chế tạo máy</span>
+                    <span className={styles.detailValue}>{displayValue(selectedVessel.engine_build_info)}</span>
+                  </div>
+
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Công suất máy</span>
+                    <span className={styles.detailValue}>{selectedVessel.power_kw ? `${selectedVessel.power_kw} kW` : '-'}</span>
+                  </div>
                 </div>
+              </div>
 
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>Nhóm Lmax</span>
-                  <span className={styles.detailValue}>{displayValue(selectedVessel.length_label)}</span>
-                </div>
+              <div className={styles.detailSection}>
+                <h4 className={styles.sectionTitle}>Kiểm tra & Hoạt động</h4>
+                <div className={styles.detailGrid}>
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Hình thức kiểm tra</span>
+                    <span className={styles.detailValue}>{displayValue(selectedVessel.type)}</span>
+                  </div>
 
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>Hình thức kiểm tra</span>
-                  <span className={styles.detailValue}>{displayValue(selectedVessel.type)}</span>
-                </div>
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Nghề hoạt động</span>
+                    <span className={styles.detailValue}>{displayValue(selectedVessel.job)}</span>
+                  </div>
 
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>Nghề hoạt động</span>
-                  <span className={styles.detailValue}>{displayValue(selectedVessel.job)}</span>
-                </div>
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Ngày kiểm tra</span>
+                    <span className={styles.detailValue}>{displayValue(selectedVessel.date)}</span>
+                  </div>
 
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>Ngày kiểm tra</span>
-                  <span className={styles.detailValue}>{displayValue(selectedVessel.date)}</span>
-                </div>
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Hạn đăng kiểm</span>
+                    <span className={`${styles.detailValue} ${styles.successValue}`}>
+                      {displayValue(selectedVessel.expire)}
+                    </span>
+                  </div>
 
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>Hạn đăng kiểm</span>
-                  <span className={`${styles.detailValue} ${styles.successValue}`}>
-                    {displayValue(selectedVessel.expire)}
-                  </span>
-                </div>
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Cấp tàu</span>
+                    <span className={styles.detailValue}>{displayValue(selectedVessel.vessel_class_label || selectedVessel.vessel_class)}</span>
+                  </div>
 
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>Cấp tàu</span>
-                  <span className={styles.detailValue}>{displayValue(selectedVessel.vessel_class_label || selectedVessel.vessel_class)}</span>
-                </div>
-
-                <div className={`${styles.detailItem} ${styles.fullWidth}`}>
-                  <span className={styles.detailLabel}>Trạng thái kỹ thuật</span>
-                  <span className={styles.detailValue}>{displayValue(selectedVessel.technical_status)}</span>
+                  <div className={`${styles.detailItem} ${styles.fullWidth}`}>
+                    <span className={styles.detailLabel}>Vùng hoạt động được phép</span>
+                    <span className={styles.detailValue}>{displayValue(selectedVessel.allowed_area)}</span>
+                  </div>
                 </div>
               </div>
             </div>

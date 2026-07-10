@@ -169,6 +169,16 @@ def _serialize_vessel(item: VesselORM) -> dict:
         "technical_status": item.technical_status or "",
         "source_filename": item.source_filename or "",
         "created_at": _format_datetime(item.created_at),
+        "build_year": item.build_year or "",
+        "build_place": item.build_place or "",
+        "gross_tonnage": item.gross_tonnage or 0.0,
+        "crew_limit": item.crew_limit or 0,
+        "bmax": item.bmax or 0.0,
+        "depth": item.depth or 0.0,
+        "engine_model": item.engine_model or "",
+        "engine_serial": item.engine_serial or "",
+        "engine_build_info": item.engine_build_info or "",
+        "allowed_area": item.allowed_area or "",
     }
 
 
@@ -255,6 +265,16 @@ def export_vessels_csv(
             "Nghề hoạt động",
             "File nguồn",
             "Ngày nhập",
+            "Năm đóng",
+            "Nơi đóng",
+            "Tổng dung tích (GT)",
+            "Số thuyền viên",
+            "Bmax (m)",
+            "D (m)",
+            "Ký hiệu máy chính",
+            "Số máy chính",
+            "Nơi chế tạo máy chính",
+            "Vùng hoạt động",
         ]
     )
     for index, item in enumerate(items, start=1):
@@ -276,6 +296,16 @@ def export_vessels_csv(
                 row["job"],
                 row["source_filename"],
                 row["created_at"],
+                row["build_year"],
+                row["build_place"],
+                row["gross_tonnage"],
+                row["crew_limit"],
+                row["bmax"],
+                row["depth"],
+                row["engine_model"],
+                row["engine_serial"],
+                row["engine_build_info"],
+                row["allowed_area"],
             ]
         )
 
