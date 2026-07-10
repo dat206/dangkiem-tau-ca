@@ -66,6 +66,16 @@ class VesselData(BaseModel):
     issued_date: Optional[date] = None
     fishing_gear: Optional[str] = ""
     source_filename: Optional[str] = ""
+    build_year: Optional[str] = ""
+    build_place: Optional[str] = ""
+    gross_tonnage: Optional[float] = 0.0
+    crew_limit: Optional[int] = 0
+    bmax: Optional[float] = 0.0
+    depth: Optional[float] = 0.0
+    engine_model: Optional[str] = ""
+    engine_serial: Optional[str] = ""
+    engine_build_info: Optional[str] = ""
+    allowed_area: Optional[str] = ""
 
     @field_validator("province_code")
     @classmethod
@@ -138,6 +148,16 @@ class VesselORM(Base):
     issued_date = Column(Date)
 
     source_filename = Column(String(255))
+    build_year = Column(String(50), nullable=True)
+    build_place = Column(String(255), nullable=True)
+    gross_tonnage = Column(Float, nullable=True)
+    crew_limit = Column(Integer, nullable=True)
+    bmax = Column(Float, nullable=True)
+    depth = Column(Float, nullable=True)
+    engine_model = Column(String(100), nullable=True)
+    engine_serial = Column(String(100), nullable=True)
+    engine_build_info = Column(String(255), nullable=True)
+    allowed_area = Column(String(500), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # UNIQUE(registration_no, inspection_date) – PostgreSQL cho phép nhiều NULL

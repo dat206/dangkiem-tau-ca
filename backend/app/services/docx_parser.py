@@ -109,6 +109,97 @@ def extract_owner_name(text: str) -> str:
     return ""
 
 
+def extract_build_info(text: str) -> tuple[Optional[str], Optional[str]]:
+    """Extract build year and build place from text."""
+    # Matches "Năm và nơi đóng"
+    m = re.search(r"Năm và nơi đóng[^:]*:\s*([^|;\n]+(?:[;,][^|;\n]+)*)", text, re.IGNORECASE)
+    if not m:
+        return None, None
+    raw_info = m.group(1).strip()
+    raw_info = strip_english_suffix(raw_info)
+    
+    parts = [p.strip() for p in re.split(r'[;,]', raw_info) if p.strip()]
+    year = None
+    place = None
+    
+    # Check if any part is a 4-digit number
+    for i, part in enumerate(parts):
+        if re.match(r"^\d{4}$", part):
+            year = part
+            other_parts = parts[:i] + parts[i+1:]
+            place = "; ".join(other_parts) if other_parts else None
+            break
+            
+    if not year and parts:
+        if len(parts) >= 2:
+            year = parts[0]
+            place = "; ".join(parts[1:])
+        else:
+            if re.search(r"\d{4}", parts[0]):
+                year = parts[0]
+            else:
+                place = parts[0]
+                
+    return year, place
+
+
+def extract_gross_tonnage(text: str) -> Optional[float]:
+    """Extract gross tonnage from text."""
+    m = re.search(r"Tổng dung tích[^:\d]*:\s*(\d+(?:[.,]\d+)?)", text, re.IGNORECASE)
+    if m:
+        val_str = m.group(1).replace(",", ".")
+        try:
+            return float(val_str)
+        except ValueError:
+            return None
+    return None
+
+
+def extract_crew_limit(text: str) -> Optional[int]:
+    """Extract crew limit from text."""
+    m = re.search(r"Số thuyền viên[^:\d]*:\s*(\d+)", text, re.IGNORECASE)
+    if m:
+        try:
+            return int(m.group(1))
+        except ValueError:
+            return None
+    return None
+
+
+def extract_bmax(text: str) -> Optional[float]:
+    """Extract Bmax from text."""
+    m = re.search(r"(?:Chiều rộng[^,]*,\s*Bmax|Bmax)[^:\d]*:\s*(\d+(?:[.,]\d+)?)", text, re.IGNORECASE)
+    if m:
+        val_str = m.group(1).replace(",", ".")
+        try:
+            return float(val_str)
+        except ValueError:
+            return None
+    return None
+
+
+def extract_depth(text: str) -> Optional[float]:
+    """Extract depth overall from text."""
+    m = re.search(r"(?:Chiều cao mạn[^,]*,\s*D|Chiều cao mạn)[^:\d]*:\s*(\d+(?:[.,]\d+)?)", text, re.IGNORECASE)
+    if m:
+        val_str = m.group(1).replace(",", ".")
+        try:
+            return float(val_str)
+        except ValueError:
+            return None
+    return None
+
+
+def extract_allowed_area(text: str) -> Optional[str]:
+    """Extract allowed operating area from text."""
+    m = re.search(r"Được phép hoạt động tại[^:]*:\s*(.+?)(?=\s*(?:Giấy chứng nhận|This certificate\b|ngày\b|\||$))", text, re.IGNORECASE)
+    if m:
+        val = m.group(1).strip()
+        val = strip_english_suffix(val)
+        return val.strip(" :;\t\n")
+    return ""
+
+
 def safe_cell_text(table, row_idx: int, col_idx: int) -> str:
     """Get cell text safely, returning '' if out of bounds."""
     try:
@@ -294,6 +385,38 @@ def parse_vessel_docx(file_path: str) -> VesselData:
             val = extract_number(m.group(1))
             if val: may_chinh = val
 
+    # 5.5. Additional Technical specs
+    build_year, build_place = extract_build_info(full_text)
+    gross_tonnage = extract_gross_tonnage(full_text)
+    crew_limit = extract_crew_limit(full_text)
+    bmax = extract_bmax(full_text)
+    depth = extract_depth(full_text)
+    allowed_area = extract_allowed_area(full_text)
+
+    # Main Engine details table
+    engine_model = ""
+    engine_serial = ""
+    engine_build_info = ""
+    
+    engine_table = None
+    for table in tables:
+        if table.rows:
+            header_text = "".join(normalize_text(cell.text) for cell in table.rows[0].cells)
+            if "Ký hiệu máy" in header_text or "Type of machine" in header_text or "Số máy" in header_text:
+                engine_table = table
+                break
+                
+    if engine_table and len(engine_table.rows) > 1:
+        r1 = engine_table.rows[1]
+        if len(r1.cells) >= 5:
+            engine_model = strip_english_suffix(normalize_text(r1.cells[1].text))
+            engine_serial = strip_english_suffix(normalize_text(r1.cells[2].text))
+            engine_build_info = strip_english_suffix(normalize_text(r1.cells[4].text))
+            
+            if engine_model == "-": engine_model = ""
+            if engine_serial == "-": engine_serial = ""
+            if engine_build_info == "-": engine_build_info = ""
+
     # 6. Operation class
     cap_tau = "khong_xac_dinh"
     if len(tables) > 4:
@@ -372,6 +495,16 @@ def parse_vessel_docx(file_path: str) -> VesselData:
             issued_date=ngay_cap,
             fishing_gear=nghe,
             source_filename=os.path.basename(file_path),
+            build_year=build_year,
+            build_place=build_place,
+            gross_tonnage=gross_tonnage,
+            crew_limit=crew_limit,
+            bmax=bmax,
+            depth=depth,
+            engine_model=engine_model,
+            engine_serial=engine_serial,
+            engine_build_info=engine_build_info,
+            allowed_area=allowed_area,
         )
     except ValidationError as exc:
         raise ParseError(f"Lỗi xác thực dữ liệu: {exc}")

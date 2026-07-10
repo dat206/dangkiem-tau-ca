@@ -51,3 +51,36 @@ def test_vessel_data_with_technical_status():
         inspection_date=date(2026, 5, 9),
     )
     assert v.technical_status == "Thoả mãn quy chuẩn"
+
+
+def test_vessel_data_with_new_fields():
+    from app.models.vessel import VesselData
+    from datetime import date
+    v = VesselData(
+        registration_no="QN-90523-TS",
+        province_code="QN",
+        lmax=21.5,
+        inspection_type="dinh_ky",
+        vessel_class="han_che_2",
+        inspection_date=date(2026, 5, 9),
+        build_year="2000",
+        build_place="Quảng Nam",
+        gross_tonnage=27.7,
+        crew_limit=4,
+        bmax=4.4,
+        depth=1.8,
+        engine_model="YANMAR",
+        engine_serial="9463",
+        engine_build_info="Máy cũ, Nhật Bản",
+        allowed_area="Vùng biển giới hạn chế cách xa bờ",
+    )
+    assert v.build_year == "2000"
+    assert v.build_place == "Quảng Nam"
+    assert v.gross_tonnage == 27.7
+    assert v.crew_limit == 4
+    assert v.bmax == 4.4
+    assert v.depth == 1.8
+    assert v.engine_model == "YANMAR"
+    assert v.engine_serial == "9463"
+    assert v.engine_build_info == "Máy cũ, Nhật Bản"
+    assert v.allowed_area == "Vùng biển giới hạn chế cách xa bờ"
