@@ -91,7 +91,7 @@ def get_vessel_class_label(vessel_class: str) -> str:
     return mapping.get(vessel_class, vessel_class or "Không xác định")
 
 
-def generate_vessel_excel(data: List[Any]) -> BytesIO:
+def generate_vessel_excel(data: List[Any], province_codes: dict = None) -> BytesIO:
     """
     Generate "Bảng kê tổng hợp" (TỔNG HỢP GHI SỔ THỦ TỤC)
     """
@@ -113,7 +113,8 @@ def generate_vessel_excel(data: List[Any]) -> BytesIO:
     ]
     headers += inspection_codes
     headers += length_group_labels
-    headers += PROVINCE_CODES_ORDER
+    province_order = list(province_codes.keys()) if province_codes else PROVINCE_CODES_ORDER
+    headers += province_order
 
     header_row = 1
     for col_idx, header_text in enumerate(headers, start=1):
@@ -190,9 +191,9 @@ def generate_vessel_excel(data: List[Any]) -> BytesIO:
         v_prov = (vessel.province_code or "").upper()
         # Handle QNg special match
         if v_prov == "QNG": v_prov = "QNg"
-        for idx, prov in enumerate(PROVINCE_CODES_ORDER, start=start_province_col):
+        for idx, prov in enumerate(province_order, start=start_province_col):
             cell = ws.cell(row=row_idx, column=idx)
-            cell.value = "X" if prov == v_prov else ""
+            cell.value = "X" if prov.upper() == v_prov.upper() else ""
             cell.style = "data_text_style"
 
     total_row = len(data) + 2
@@ -238,7 +239,7 @@ def generate_vessel_excel(data: List[Any]) -> BytesIO:
     return output
 
 
-def generate_quarterly_summary_excel(vessels: List[Any], quarter: int, year: int) -> BytesIO:
+def generate_quarterly_summary_excel(vessels: List[Any], quarter: int, year: int, org_name: str = None, org_address: str = None, province_codes: dict = None) -> BytesIO:
     """
     Generate "Báo cáo Quý theo tỉnh" - theo chuẩn file công ty.
     Cấu trúc: phần đầu hành chính (rows 1-4), header bảng 3 dòng + hàng số TT (rows 5-8),
@@ -281,6 +282,14 @@ def generate_quarterly_summary_excel(vessels: List[Any], quarter: int, year: int
             cell.fill = header_fill
             return cell
 
+        # Resolve dynamic settings
+        org_name_val = org_name or "Công ty CP công nghệ cao Hoàng Bảo Minh"
+        place_val = "Thanh Hóa"
+        if org_address:
+            parts = [p.strip() for p in org_address.split(",") if p.strip()]
+            if parts:
+                place_val = parts[-1]
+
         # ============================================================
         # ROW 1: Phụ lục / công văn
         # ============================================================
@@ -289,7 +298,7 @@ def generate_quarterly_summary_excel(vessels: List[Any], quarter: int, year: int
         c1.value = (
             f"Phụ lục {appendix_index}\n"
             f"(kèm theo Công văn số      /BC/ĐKTC ngày      /{quarter * 3}/{year} "
-            "của Công ty CP công nghệ cao Hoàng Bảo Minh)"
+            f"của {org_name_val})"
         )
         c1.font = Font(name="Times New Roman", size=11, italic=True)
         c1.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
@@ -299,7 +308,7 @@ def generate_quarterly_summary_excel(vessels: List[Any], quarter: int, year: int
         # ============================================================
         ws.merge_cells("A2:C2")
         c2_cty = ws["A2"]
-        c2_cty.value = "CÔNG TY CP CÔNG NGHỆ CAO\nHOÀNG BẢO MINH"
+        c2_cty.value = org_name_val.upper()
         c2_cty.font = bold_font
         c2_cty.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
@@ -320,7 +329,7 @@ def generate_quarterly_summary_excel(vessels: List[Any], quarter: int, year: int
         # ============================================================
         ws.merge_cells("J3:U3")
         c3 = ws["J3"]
-        c3.value = f"Thanh Hóa, ngày      tháng {quarter * 3} năm {year}"
+        c3.value = f"{place_val}, ngày      tháng {quarter * 3} năm {year}"
         c3.font = Font(name="Times New Roman", size=11, italic=True)
         c3.alignment = Alignment(horizontal="center", vertical="center")
 
@@ -514,13 +523,22 @@ def generate_quarterly_summary_excel(vessels: List[Any], quarter: int, year: int
         ws.row_dimensions[7].height = 20
         ws.row_dimensions[8].height = 18
 
+    def custom_get_province_name(code: str) -> str:
+        if province_codes and code in province_codes:
+            return province_codes[code]
+        if province_codes:
+            for k, v in province_codes.items():
+                if k.upper() == code.upper():
+                    return v
+        return get_province_name(code)
+
     # 1. Create the TỔNG HỢP sheet first
     ws_summary = wb.create_sheet(title="TỔNG HỢP")
     fill_sheet(ws_summary, is_summary=True, target_provinces=provinces_in_data, appendix_index=2)
 
     # 2. Create individual sheets for each province
     for idx, prov_code in enumerate(provinces_in_data):
-        prov_name = get_province_name(prov_code).upper()
+        prov_name = custom_get_province_name(prov_code).upper()
         # Valid sheet name max length is 31
         ws_prov = wb.create_sheet(title=prov_name[:31])
         fill_sheet(ws_prov, is_summary=False, target_provinces=[prov_code], appendix_index=idx + 3)

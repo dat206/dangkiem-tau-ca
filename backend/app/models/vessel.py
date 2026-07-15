@@ -183,3 +183,12 @@ class ReportHistoryORM(Base):
     created_by = Column(String(255), default="Nguyen Thi Binh")
     status = Column(String(20), default="success")
     error_message = Column(Text, nullable=True)
+
+
+class SystemSettingORM(Base):
+    """Database model for system settings (key-value store)."""
+
+    __tablename__ = "system_settings"
+
+    key = Column(String(50), primary_key=True, index=True)
+    value = Column(Text, nullable=True)
