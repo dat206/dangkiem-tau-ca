@@ -287,7 +287,8 @@ async def generate_report_from_db(
 @router.post("/extract-archive")
 async def extract_archive(file: UploadFile = File(...)):
     filename = file.filename
-    if not (filename.endswith(".zip") or filename.endswith(".rar")):
+    filename_lower = filename.lower()
+    if not (filename_lower.endswith(".zip") or filename_lower.endswith(".rar")):
         raise HTTPException(
             status_code=400,
             detail="Chỉ hỗ trợ giải nén file .zip hoặc .rar"
@@ -304,46 +305,78 @@ async def extract_archive(file: UploadFile = File(...)):
     temp_sub_dir = Path(tempfile.mkdtemp(dir=EXTRACT_DIR))
     
     try:
-        if filename.endswith(".zip"):
+        if filename_lower.endswith(".zip"):
             with zipfile.ZipFile(archive_path, 'r') as zip_ref:
                 for zip_info in zip_ref.infolist():
                     if zip_info.filename.lower().endswith(".docx"):
-                        filename_only = Path(zip_info.filename).name
+                        # Attempt to fix filename encoding (zipfile decodes non-UTF8 filenames as cp437)
+                        orig_filename = zip_info.filename
+                        try:
+                            decoded_name = orig_filename.encode('cp437').decode('utf-8')
+                        except Exception:
+                            decoded_name = orig_filename
+                            
+                        filename_only = Path(decoded_name).name
                         if filename_only and not filename_only.startswith("~$"):
                             target_path = temp_sub_dir / filename_only
                             with zip_ref.open(zip_info) as source, open(target_path, "wb") as target:
                                 shutil.copyfileobj(source, target)
-        elif filename.endswith(".rar"):
+        elif filename_lower.endswith(".rar"):
             success = False
-            # Try 7-Zip
-            if Path(r"C:\Program Files\7-Zip\7z.exe").exists():
-                try:
-                    cmd = [
-                        r"C:\Program Files\7-Zip\7z.exe",
-                        "x",
-                        str(archive_path),
-                        f"-o{temp_sub_dir}",
-                        "*.docx",
-                        "-r",
-                        "-y"
-                    ]
-                    res = subprocess.run(cmd, capture_output=True, text=True)
-                    if res.returncode == 0:
-                        success = True
-                except Exception:
-                    pass
             
-            # Try WinRAR
-            if not success and Path(r"C:\Program Files\WinRAR\UnRAR.exe").exists():
+            # Find a suitable executable dynamically
+            exe_path = None
+            is_seven_zip = True
+            
+            # 1. Search for 7-zip family in PATH
+            for cmd_name in ["7z", "7zz", "7za"]:
+                found = shutil.which(cmd_name)
+                if found:
+                    exe_path = found
+                    is_seven_zip = True
+                    break
+            
+            # 2. Search for unrar in PATH
+            if not exe_path:
+                found = shutil.which("unrar")
+                if found:
+                    exe_path = found
+                    is_seven_zip = False
+            
+            # 3. Fallback to hardcoded Windows default installation paths
+            if not exe_path:
+                if Path(r"C:\Program Files\7-Zip\7z.exe").exists():
+                    exe_path = r"C:\Program Files\7-Zip\7z.exe"
+                    is_seven_zip = True
+                elif Path(r"C:\Program Files\WinRAR\UnRAR.exe").exists():
+                    exe_path = r"C:\Program Files\WinRAR\UnRAR.exe"
+                    is_seven_zip = False
+            
+            if exe_path:
                 try:
-                    cmd = [
-                        r"C:\Program Files\WinRAR\UnRAR.exe",
-                        "x",
-                        "-y",
-                        str(archive_path),
-                        "*.docx",
-                        str(temp_sub_dir) + "\\"
-                    ]
+                    if is_seven_zip:
+                        cmd = [
+                            exe_path,
+                            "x",
+                            str(archive_path),
+                            f"-o{temp_sub_dir}",
+                            "*.docx",
+                            "-r",
+                            "-y"
+                        ]
+                    else:
+                        # Ensure trailing slash for unrar
+                        output_dir_str = str(temp_sub_dir)
+                        if not (output_dir_str.endswith("/") or output_dir_str.endswith("\\")):
+                            output_dir_str += "/"
+                        cmd = [
+                            exe_path,
+                            "x",
+                            "-y",
+                            str(archive_path),
+                            "*.docx",
+                            output_dir_str
+                        ]
                     res = subprocess.run(cmd, capture_output=True, text=True)
                     if res.returncode == 0:
                         success = True
