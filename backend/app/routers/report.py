@@ -9,10 +9,11 @@ from pathlib import Path
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query, status
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 from sqlalchemy import extract, func
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models.vessel import VesselORM, ReportHistoryORM
+from app.models.vessel import VesselORM, ReportHistoryORM, SystemSettingORM
 from app.services.data_processor import get_province_name
 from app.services.excel_generator import generate_vessel_excel, generate_quarterly_summary_excel
 router = APIRouter(
@@ -206,6 +207,15 @@ def get_export_options(
         code = _normalize_province_code(vessel.province_code)
         counts[code] = counts.get(code, 0) + 1
     start, end = _quarter_date_range(quarter, year)
+    settings_db = db.query(SystemSettingORM).filter(SystemSettingORM.key == "province_codes").first()
+    provinces_list = COASTAL_PROVINCES
+    if settings_db and settings_db.value:
+        try:
+            custom_codes = json.loads(settings_db.value)
+            provinces_list = [{"code": k, "name": v} for k, v in custom_codes.items()]
+        except Exception:
+            pass
+
     return {
         "quarter": quarter,
         "year": year,
@@ -214,7 +224,7 @@ def get_export_options(
         "total": len(vessels),
         "provinces": [
             {**province, "count": counts.get(province["code"], 0)}
-            for province in COASTAL_PROVINCES
+            for province in provinces_list
         ],
     }
 @router.post("/generate-from-db")
@@ -257,14 +267,34 @@ async def generate_report_from_db(
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     zip_filename = f"report_q{quarter}_{year}_{timestamp}.zip"
     zip_filepath = reports_dir / zip_filename
+    settings_db = db.query(SystemSettingORM).all()
+    settings_map = {item.key: item.value for item in settings_db}
+    org_name = settings_map.get("org_name", "Cục Đăng kiểm Việt Nam")
+    org_address = settings_map.get("org_address", "18 Phạm Hùng, Mỹ Đình 2, Nam Từ Liêm, Hà Nội")
+    custom_codes = {}
+    if "province_codes" in settings_map:
+        try:
+            custom_codes = json.loads(settings_map["province_codes"])
+        except Exception:
+            pass
+
     with zipfile.ZipFile(zip_filepath, "w", zipfile.ZIP_DEFLATED) as zip_file:
         if "registry" in selected_file_types:
-            registry_excel = generate_vessel_excel(selected_vessels)
+            registry_excel = generate_vessel_excel(selected_vessels, province_codes=custom_codes)
             zip_file.writestr("bang_ke_tong_hop.xlsx", registry_excel.getvalue())
         if "summary" in selected_file_types:
-            summary_excel = generate_quarterly_summary_excel(selected_vessels, quarter, year)
+            summary_excel = generate_quarterly_summary_excel(
+                selected_vessels, quarter, year, 
+                org_name=org_name, org_address=org_address, province_codes=custom_codes
+            )
             zip_file.writestr("bao_cao_quy_theo_tinh.xlsx", summary_excel.getvalue())
-    province_names = [_province_name(code) for code in sorted(selected_provinces)]
+            
+    def _local_prov_name(code: str) -> str:
+        if custom_codes and code in custom_codes:
+            return custom_codes[code]
+        return _province_name(code)
+
+    province_names = [_local_prov_name(code) for code in sorted(selected_provinces)]
     history_item = ReportHistoryORM(
         quarter=quarter,
         year=year,
@@ -556,9 +586,24 @@ async def generate_report(
             extract('month', effective_date).in_(months)
         ).all()
         
+        # Fetch settings
+        settings_db = db.query(SystemSettingORM).all()
+        settings_map = {item.key: item.value for item in settings_db}
+        org_name = settings_map.get("org_name", "Cục Đăng kiểm Việt Nam")
+        org_address = settings_map.get("org_address", "18 Phạm Hùng, Mỹ Đình 2, Nam Từ Liêm, Hà Nội")
+        custom_codes = {}
+        if "province_codes" in settings_map:
+            try:
+                custom_codes = json.loads(settings_map["province_codes"])
+            except Exception:
+                pass
+
         # 4. Tạo các tệp Excel trong bộ nhá»›
-        registry_excel = generate_vessel_excel(vessels)
-        summary_excel = generate_quarterly_summary_excel(vessels, quarter, year)
+        registry_excel = generate_vessel_excel(vessels, province_codes=custom_codes)
+        summary_excel = generate_quarterly_summary_excel(
+            vessels, quarter, year, 
+            org_name=org_name, org_address=org_address, province_codes=custom_codes
+        )
         
         # 5. Đóng gói ZIP
         reports_dir = Path("saved_reports")
@@ -606,3 +651,88 @@ async def generate_report(
             path = item[0] if isinstance(item, tuple) else item
             if path.exists():
                 path.unlink()
+
+
+# --- SYSTEM SETTINGS CONFIGURATIONS API ---
+
+class ConfigsPayload(BaseModel):
+    org_name: Optional[str] = None
+    org_address: Optional[str] = None
+    org_phone: Optional[str] = None
+    org_email: Optional[str] = None
+    org_logo: Optional[str] = None
+    report_year: Optional[int] = None
+    default_provinces: Optional[list[str]] = None
+    province_codes: Optional[dict[str, str]] = None
+
+
+@router.get("/configs")
+def get_configs(db: Session = Depends(get_db)):
+    settings_db = db.query(SystemSettingORM).all()
+    settings_map = {item.key: item.value for item in settings_db}
+    
+    def parse_json(val, default):
+        if not val:
+            return default
+        try:
+            return json.loads(val)
+        except Exception:
+            return default
+
+    return {
+        "org_name": settings_map.get("org_name", "Cục Đăng kiểm Việt Nam"),
+        "org_address": settings_map.get("org_address", "18 Phạm Hùng, Mỹ Đình 2, Nam Từ Liêm, Hà Nội"),
+        "org_phone": settings_map.get("org_phone", "024 3768 4715"),
+        "org_email": settings_map.get("org_email", "contact@vr.org.vn"),
+        "org_logo": settings_map.get("org_logo", ""),
+        "report_year": int(settings_map.get("report_year", "2026")),
+        "default_provinces": parse_json(settings_map.get("default_provinces"), ["Quảng Ninh", "Thanh Hóa", "Hà Tĩnh", "Nghệ An", "Quảng Bình"]),
+        "province_codes": parse_json(settings_map.get("province_codes"), {
+            "QN": "Quảng Ninh",
+            "TH": "Thanh Hóa",
+            "HT": "Hà Tĩnh",
+            "NB": "Ninh Bình",
+            "NA": "Nam Định",
+            "NG": "Nghệ An",
+            "CT": "Cà Mau",
+            "KG": "Kiên Giang",
+            "BD": "Bạc Liêu",
+            "SL": "Sóc Trăng",
+            "QNG": "Quảng Ngãi",
+            "QT": "Quảng Trị",
+            "TB": "Thái Bình",
+            "NĐ": "Nam Định",
+        })
+    }
+
+
+@router.post("/configs")
+def save_configs(payload: ConfigsPayload, db: Session = Depends(get_db)):
+    updates = {}
+    if payload.org_name is not None:
+        updates["org_name"] = payload.org_name
+    if payload.org_address is not None:
+        updates["org_address"] = payload.org_address
+    if payload.org_phone is not None:
+        updates["org_phone"] = payload.org_phone
+    if payload.org_email is not None:
+        updates["org_email"] = payload.org_email
+    if payload.org_logo is not None:
+        updates["org_logo"] = payload.org_logo
+    if payload.report_year is not None:
+        updates["report_year"] = str(payload.report_year)
+    if payload.default_provinces is not None:
+        updates["default_provinces"] = json.dumps(payload.default_provinces)
+    if payload.province_codes is not None:
+        updates["province_codes"] = json.dumps(payload.province_codes)
+        
+    for key, val in updates.items():
+        item = db.query(SystemSettingORM).filter(SystemSettingORM.key == key).first()
+        if item:
+            item.value = val
+        else:
+            item = SystemSettingORM(key=key, value=val)
+            db.add(item)
+            
+    db.commit()
+    return get_configs(db)

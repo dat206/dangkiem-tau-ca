@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, BarChart2, CheckCircle2, Download, FileSpreadsheet, RefreshCw } from 'lucide-react';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
-import { downloadBlob, generateReportFromDb, getExportOptions } from '../api/reportApi';
+import { downloadBlob, generateReportFromDb, getExportOptions, reportApi } from '../api/reportApi';
 import styles from './ReportGenerate.module.css';
 
 const OUTPUT_TYPES = [
@@ -29,6 +29,20 @@ const ReportGenerate = () => {
   const [year, setYear] = useState(new Date().getFullYear());
   const [options, setOptions] = useState({ total: 0, provinces: [] });
   const [selectedProvinces, setSelectedProvinces] = useState([]);
+
+  useEffect(() => {
+    const loadDefaultYear = async () => {
+      try {
+        const configs = await reportApi.getConfigs();
+        if (configs && configs.report_year) {
+          setYear(configs.report_year);
+        }
+      } catch (e) {
+        // Fallback
+      }
+    };
+    loadDefaultYear();
+  }, []);
   const [formats, setFormats] = useState({ detail: true, summary: true });
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
@@ -46,10 +60,24 @@ const ReportGenerate = () => {
         if (!active) return;
         setOptions(data);
         setFetchError('');
+        
+        let defaults = [];
+        try {
+          const configs = await reportApi.getConfigs();
+          defaults = configs.default_provinces || [];
+        } catch {}
+
         setSelectedProvinces((current) => {
           const validCodes = new Set((data.provinces || []).map((item) => item.code));
           const kept = current.filter((code) => validCodes.has(code));
           if (kept.length > 0) return kept;
+          
+          if (defaults.length > 0) {
+            const matchedCodes = (data.provinces || [])
+              .filter(p => defaults.includes(p.name))
+              .map(p => p.code);
+            if (matchedCodes.length > 0) return matchedCodes;
+          }
           return (data.provinces || []).filter((item) => item.count > 0).map((item) => item.code);
         });
         setStatus('idle');
