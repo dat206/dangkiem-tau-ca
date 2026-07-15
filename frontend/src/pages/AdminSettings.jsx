@@ -47,6 +47,7 @@ const AdminSettings = () => {
         }));
         setProvinceCodes(codesArray);
       } catch (err) {
+        console.error(err);
         setNotification({ type: 'error', message: 'Không tải được cấu hình hệ thống.' });
       } finally {
         setLoading(false);
@@ -140,6 +141,7 @@ const AdminSettings = () => {
       });
       showNotification('success', 'Đã lưu thông tin đơn vị thành công!');
     } catch (err) {
+      console.error(err);
       showNotification('error', 'Lỗi khi lưu thông tin đơn vị.');
     } finally {
       setSavingOrg(false);
@@ -168,6 +170,7 @@ const AdminSettings = () => {
 
       showNotification('success', 'Đã lưu cấu hình báo cáo thành công!');
     } catch (err) {
+      console.error(err);
       showNotification('error', 'Lỗi khi lưu cấu hình báo cáo.');
     } finally {
       setSavingConfig(false);

@@ -38,7 +38,7 @@ const ReportGenerate = () => {
           setYear(configs.report_year);
         }
       } catch (e) {
-        // Fallback
+        console.error(e);
       }
     };
     loadDefaultYear();
@@ -65,7 +65,9 @@ const ReportGenerate = () => {
         try {
           const configs = await reportApi.getConfigs();
           defaults = configs.default_provinces || [];
-        } catch {}
+        } catch (e) {
+          console.error(e);
+        }
 
         setSelectedProvinces((current) => {
           const validCodes = new Set((data.provinces || []).map((item) => item.code));
