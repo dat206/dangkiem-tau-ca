@@ -33,11 +33,12 @@ const MainLayout = () => {
 
   const ADMIN_ITEMS = [
     { path: '/admin/settings', label: 'Cài đặt', icon: Settings },
-    { path: '/admin/users', label: 'Người dùng', icon: Users },
+    { path: '/admin/users', label: 'Người dùng', icon: Users, adminOnly: true },
   ];
 
   const getPageTitle = () => {
-    const allItems = [...NAV_ITEMS, ...ADMIN_ITEMS];
+    const visibleAdminItems = ADMIN_ITEMS.filter((item) => !item.adminOnly || user?.role === 'admin');
+    const allItems = [...NAV_ITEMS, ...visibleAdminItems];
     const match = allItems.find((item) => location.pathname.startsWith(item.path));
     return match ? match.label : 'Hệ thống Đăng kiểm';
   };
@@ -91,7 +92,7 @@ const MainLayout = () => {
 
           <div className={styles.navDivider} />
 
-          {ADMIN_ITEMS.map((item) => (
+          {ADMIN_ITEMS.filter((item) => !item.adminOnly || user?.role === 'admin').map((item) => (
             <NavLink
               key={item.path}
               to={item.path}

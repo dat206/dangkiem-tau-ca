@@ -2,6 +2,7 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import PrivateRoute from './components/PrivateRoute';
+import { useAuth } from './context/AuthContext';
 
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -11,6 +12,14 @@ import ReportGenerate from './pages/ReportGenerate';
 import ReportHistory from './pages/ReportHistory';
 import AdminUsers from './pages/AdminUsers';
 import AdminSettings from './pages/AdminSettings';
+
+const AdminRoute = ({ children }) => {
+  const { user } = useAuth();
+  if (user?.role !== 'admin') {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
+};
 
 function App() {
   return (
@@ -34,7 +43,7 @@ function App() {
           <Route path="vessels" element={<Vessels />} />
           <Route path="reports/generate" element={<ReportGenerate />} />
           <Route path="reports/history" element={<ReportHistory />} />
-          <Route path="admin/users" element={<AdminUsers />} />
+          <Route path="admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
           <Route path="admin/settings" element={<AdminSettings />} />
         </Route>
 
