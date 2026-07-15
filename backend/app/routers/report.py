@@ -358,13 +358,22 @@ async def extract_archive(file: UploadFile = File(...)):
             exe_path = None
             is_seven_zip = True
             
-            # 1. Search for 7-zip family in PATH
-            for cmd_name in ["7z", "7zz", "7za"]:
-                found = shutil.which(cmd_name)
-                if found:
-                    exe_path = found
+            # 0. Search local directory first (e.g. static binary in backend root)
+            for local_name in ["7zz", "backend/7zz"]:
+                local_path = Path(local_name)
+                if local_path.exists():
+                    exe_path = str(local_path.resolve())
                     is_seven_zip = True
                     break
+            
+            # 1. Search for 7-zip family in PATH
+            if not exe_path:
+                for cmd_name in ["7z", "7zz", "7za"]:
+                    found = shutil.which(cmd_name)
+                    if found:
+                        exe_path = found
+                        is_seven_zip = True
+                        break
             
             # 2. Search for unrar in PATH
             if not exe_path:
