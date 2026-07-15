@@ -35,15 +35,17 @@ const Upload = () => {
   };
 
   const addFiles = (newFiles) => {
-    const validFiles = newFiles.filter(f => 
-      f.name.endsWith('.docx') || f.name.endsWith('.zip') || f.name.endsWith('.rar')
-    );
+    const validFiles = newFiles.filter(f => {
+      const lowerName = f.name.toLowerCase();
+      return lowerName.endsWith('.docx') || lowerName.endsWith('.zip') || lowerName.endsWith('.rar');
+    });
     if (validFiles.length !== newFiles.length) {
       alert("Chỉ chấp nhận file .docx, .zip hoặc .rar. Các file định dạng khác đã bị loại bỏ.");
     }
     
     const formatted = validFiles.map(f => {
-      const isArch = f.name.endsWith('.zip') || f.name.endsWith('.rar');
+      const lowerName = f.name.toLowerCase();
+      const isArch = lowerName.endsWith('.zip') || lowerName.endsWith('.rar');
       return {
         name: f.name,
         size: f.size,
@@ -197,7 +199,7 @@ const Upload = () => {
             
             {files.map((file, idx) => {
               const isArchive = file.isArchive;
-              const isZip = file.name.endsWith('.zip');
+              const isZip = file.name.toLowerCase().endsWith('.zip');
               
               return (
                 <div key={idx} className={`${styles.fileItem} ${isArchive ? styles.archiveItem : ''}`}>
