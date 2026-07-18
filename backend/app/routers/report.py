@@ -1,5 +1,6 @@
 
 import json
+import uuid
 import shutil
 import subprocess
 import tempfile
@@ -7,12 +8,12 @@ import zipfile
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query, status, BackgroundTasks
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy import extract, func
 from sqlalchemy.orm import Session
-from app.database import get_db
+from app.database import get_db, SessionLocal
 from app.models.vessel import VesselORM, ReportHistoryORM, SystemSettingORM
 from app.services.data_processor import get_province_name
 from app.services.excel_generator import generate_vessel_excel, generate_quarterly_summary_excel
@@ -314,6 +315,66 @@ async def generate_report_from_db(
         media_type="application/zip",
         filename=zip_filename,
     )
+
+TASKS_DB = {}
+
+@router.get("/tasks/{task_id}")
+async def get_task_status(task_id: str):
+    """API kiểm tra trạng thái tiến trình xử lý hàng loạt chạy nền."""
+    task = TASKS_DB.get(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Không tìm thấy tác vụ.")
+    return task
+
+def process_batch_async(task_id: str, saved_temp_paths: List[tuple], created_subdirs: List[Path]):
+    """Tiến trình chạy nền xử lý phân tích và lưu DB."""
+    db = SessionLocal()
+    try:
+        from app.services.batch_processor import run_batch_processor_api
+        processing_results = run_batch_processor_api(file_paths_with_names=saved_temp_paths, db=db, max_threads=4)
+        success_count = sum(1 for item in processing_results if item['status'] in ('Thành công', 'Trùng lặp'))
+        
+        # Cleanup subdirectories for extracted temp files
+        dirs_to_delete = set(created_subdirs)
+        for p, _ in saved_temp_paths:
+            if EXTRACT_DIR in p.parents:
+                dirs_to_delete.add(p.parent)
+        for d in dirs_to_delete:
+            try:
+                if d.exists():
+                    shutil.rmtree(d)
+            except OSError:
+                pass
+                
+        TASKS_DB[task_id] = {
+            "status": "completed",
+            "total": len(processing_results),
+            "success": success_count,
+            "failed": len(processing_results) - success_count,
+            "data": processing_results
+        }
+    except Exception as e:
+        for d in created_subdirs:
+            try:
+                if d.exists():
+                    shutil.rmtree(d)
+            except OSError:
+                pass
+        TASKS_DB[task_id] = {
+            "status": "failed",
+            "error": str(e)
+        }
+    finally:
+        db.close()
+        for item in saved_temp_paths:
+            path = item[0] if isinstance(item, tuple) else item
+            if EXTRACT_DIR not in path.parents:
+                try:
+                    if path.exists():
+                        path.unlink()
+                except OSError:
+                    pass
+
 def extract_single_archive(archive_file_path: Path, filename: str) -> tuple[List[tuple], List[Path]]:
     """
     Giải nén file ZIP hoặc RAR sang thư mục tạm thời dưới EXTRACT_DIR.
@@ -481,6 +542,7 @@ async def extract_archive(file: UploadFile = File(...)):
 
 @router.post("/upload-batch")
 async def upload_vessel_documents(
+    background_tasks: BackgroundTasks,
     files: List[UploadFile] = File(default=[]),
     temp_paths: Optional[str] = Form(None),
     db: Session = Depends(get_db)
@@ -489,7 +551,7 @@ async def upload_vessel_documents(
     API tiếp nhận nhiều file giấy chứng nhận (.docx) từ trình duyệt,
     hoặc nhận các file nén (.zip, .rar) và tự động giải nén trên máy chủ,
     hoặc nhận các đường dẫn file tạm đã giải nén trước đó,
-    thực hiện gọi bộ xử lý đa luồng và phản hồi kết quả về Frontend.
+    thực hiện đẩy tiến trình xử lý vào hàng đợi chạy nền.
     """
     saved_temp_paths = []
     created_subdirs = []
@@ -539,28 +601,26 @@ async def upload_vessel_documents(
                 detail="Không tìm thấy file Word định dạng .docx hợp lệ để xử lý."
             )
         
-        from app.services.batch_processor import run_batch_processor_api
-        processing_results = run_batch_processor_api(file_paths_with_names=saved_temp_paths, db=db, max_threads=4)
-        success_count = sum(1 for item in processing_results if item['status'] in ('Thành công', 'Trùng lặp'))
+        task_id = str(uuid.uuid4())
+        TASKS_DB[task_id] = {
+            "status": "processing",
+            "total": len(saved_temp_paths),
+            "success": 0,
+            "failed": 0,
+            "data": []
+        }
         
-        # Cleanup subdirectories for extracted temp files
-        dirs_to_delete = set(created_subdirs)
-        for p, _ in saved_temp_paths:
-            if EXTRACT_DIR in p.parents:
-                dirs_to_delete.add(p.parent)
-        for d in dirs_to_delete:
-            try:
-                if d.exists():
-                    shutil.rmtree(d)
-            except OSError:
-                pass
-                    
+        background_tasks.add_task(
+            process_batch_async,
+            task_id,
+            saved_temp_paths,
+            created_subdirs
+        )
+        
         return {
-            "message": f"Xử lý hoàn tất {len(processing_results)} file tài liệu.",
-            "total": len(processing_results),
-            "success": success_count,
-            "failed": len(processing_results) - success_count,
-            "data": processing_results
+            "task_id": task_id,
+            "status": "processing",
+            "message": "Đang xử lý tài liệu trong nền..."
         }
     except Exception as e:
         for d in created_subdirs:
@@ -569,11 +629,6 @@ async def upload_vessel_documents(
                     shutil.rmtree(d)
             except OSError:
                 pass
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-            detail=f"Lỗi máy chủ: {str(e)}"
-        )
-    finally:
         for item in saved_temp_paths:
             path = item[0] if isinstance(item, tuple) else item
             if EXTRACT_DIR not in path.parents:
@@ -582,6 +637,10 @@ async def upload_vessel_documents(
                         path.unlink()
                 except OSError:
                     pass
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            detail=f"Lỗi chuẩn bị máy chủ: {str(e)}"
+        )
 @router.post("/generate-report")
 async def generate_report(
     files: List[UploadFile] = File(...),

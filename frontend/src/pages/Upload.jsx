@@ -99,16 +99,49 @@ const Upload = () => {
         body: formData,
       });
       
-      const data = await response.json();
+      const resData = await response.json();
       if (!response.ok) {
-        throw new Error(data.detail || 'Có lỗi xảy ra');
+        throw new Error(resData.detail || 'Gửi yêu cầu xử lý thất bại');
       }
       
-      setResults(data);
-      setFiles([]);
+      const taskId = resData.task_id;
+      if (!taskId) {
+        setResults(resData);
+        setFiles([]);
+        setProcessing(false);
+        return;
+      }
+      
+      // Bắt đầu vòng lặp polling kiểm tra trạng thái tác vụ nền
+      const intervalId = setInterval(async () => {
+        try {
+          const pollResponse = await fetch(`${API_BASE}/reports/tasks/${taskId}`);
+          if (!pollResponse.ok) {
+            const errData = await pollResponse.json();
+            throw new Error(errData.detail || 'Lỗi kiểm tra tiến trình');
+          }
+          
+          const taskStatus = await pollResponse.json();
+          if (taskStatus.status === 'completed') {
+            clearInterval(intervalId);
+            setResults(taskStatus);
+            setFiles([]);
+            setProcessing(false);
+          } else if (taskStatus.status === 'failed') {
+            clearInterval(intervalId);
+            alert("Lỗi xử lý chạy nền: " + (taskStatus.error || 'Thao tác thất bại'));
+            setProcessing(false);
+          }
+          // Nếu 'processing', tiếp tục chờ đợi
+        } catch (pollErr) {
+          clearInterval(intervalId);
+          alert("Lỗi kết nối máy chủ khi theo dõi tiến trình: " + pollErr.message);
+          setProcessing(false);
+        }
+      }, 2000); // Poll every 2 seconds
+      
     } catch (error) {
       alert("Lỗi kết nối máy chủ: " + error.message);
-    } finally {
       setProcessing(false);
     }
   };
