@@ -9,12 +9,13 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query, status, BackgroundTasks
+from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy import extract, func
 from sqlalchemy.orm import Session
 from app.database import get_db, SessionLocal
-from app.models.vessel import VesselORM, ReportHistoryORM, SystemSettingORM
+from app.models.vessel import VesselORM, ReportHistoryORM, SystemSettingORM, BatchTaskORM
 from app.services.data_processor import get_province_name
 from app.services.excel_generator import generate_vessel_excel, generate_quarterly_summary_excel
 router = APIRouter(
@@ -319,12 +320,33 @@ async def generate_report_from_db(
 TASKS_DB = {}
 
 @router.get("/tasks/{task_id}")
-async def get_task_status(task_id: str):
+async def get_task_status(task_id: str, db: Session = Depends(get_db)):
     """API kiểm tra trạng thái tiến trình xử lý hàng loạt chạy nền."""
+    # First check memory
     task = TASKS_DB.get(task_id)
-    if not task:
+    if task:
+        return task
+        
+    # Fallback to database for multi-worker environments
+    db_task = db.query(BatchTaskORM).filter(BatchTaskORM.id == task_id).first()
+    if not db_task:
         raise HTTPException(status_code=404, detail="Không tìm thấy tác vụ.")
-    return task
+        
+    res_data = []
+    if db_task.data:
+        try:
+            res_data = json.loads(db_task.data)
+        except Exception:
+            pass
+            
+    return {
+        "status": db_task.status,
+        "total": db_task.total,
+        "success": db_task.success,
+        "failed": db_task.failed,
+        "error": db_task.error,
+        "data": res_data
+    }
 
 def process_batch_async(task_id: str, saved_temp_paths: List[tuple], created_subdirs: List[Path]):
     """Tiến trình chạy nền xử lý phân tích và lưu DB."""
@@ -346,13 +368,24 @@ def process_batch_async(task_id: str, saved_temp_paths: List[tuple], created_sub
             except OSError:
                 pass
                 
-        TASKS_DB[task_id] = {
+        task_res = {
             "status": "completed",
             "total": len(processing_results),
             "success": success_count,
             "failed": len(processing_results) - success_count,
             "data": processing_results
         }
+        TASKS_DB[task_id] = task_res
+        
+        # Update database state
+        db_task = db.query(BatchTaskORM).filter(BatchTaskORM.id == task_id).first()
+        if db_task:
+            db_task.status = "completed"
+            db_task.success = success_count
+            db_task.failed = len(processing_results) - success_count
+            db_task.data = json.dumps(jsonable_encoder(processing_results))
+            db.commit()
+            
     except Exception as e:
         for d in created_subdirs:
             try:
@@ -364,6 +397,13 @@ def process_batch_async(task_id: str, saved_temp_paths: List[tuple], created_sub
             "status": "failed",
             "error": str(e)
         }
+        
+        # Update database state with error
+        db_task = db.query(BatchTaskORM).filter(BatchTaskORM.id == task_id).first()
+        if db_task:
+            db_task.status = "failed"
+            db_task.error = str(e)
+            db.commit()
     finally:
         db.close()
         for item in saved_temp_paths:
@@ -609,6 +649,21 @@ async def upload_vessel_documents(
             "failed": 0,
             "data": []
         }
+        
+        # Save to database to support multi-worker status query
+        try:
+            db_task = BatchTaskORM(
+                id=task_id,
+                status="processing",
+                total=len(saved_temp_paths),
+                success=0,
+                failed=0,
+                data=json.dumps([])
+            )
+            db.add(db_task)
+            db.commit()
+        except Exception:
+            pass
         
         background_tasks.add_task(
             process_batch_async,

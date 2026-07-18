@@ -192,3 +192,18 @@ class SystemSettingORM(Base):
 
     key = Column(String(50), primary_key=True, index=True)
     value = Column(Text, nullable=True)
+
+
+class BatchTaskORM(Base):
+    """Database model for background batch task tracking."""
+
+    __tablename__ = "batch_tasks"
+
+    id = Column(String(50), primary_key=True, index=True)
+    status = Column(String(20), default="processing")
+    total = Column(Integer, default=0)
+    success = Column(Integer, default=0)
+    failed = Column(Integer, default=0)
+    error = Column(Text, nullable=True)
+    data = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
