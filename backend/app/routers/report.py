@@ -314,32 +314,23 @@ async def generate_report_from_db(
         media_type="application/zip",
         filename=zip_filename,
     )
-@router.post("/extract-archive")
-async def extract_archive(file: UploadFile = File(...)):
-    filename = file.filename
+def extract_single_archive(archive_file_path: Path, filename: str) -> tuple[List[tuple], List[Path]]:
+    """
+    Giải nén file ZIP hoặc RAR sang thư mục tạm thời dưới EXTRACT_DIR.
+    Trả về:
+      - Danh sách các tuple (đường dẫn docx giải nén: Path, tên file gốc: str)
+      - Danh sách các thư mục tạm đã tạo để dọn dẹp sau
+    """
     filename_lower = filename.lower()
-    if not (filename_lower.endswith(".zip") or filename_lower.endswith(".rar")):
-        raise HTTPException(
-            status_code=400,
-            detail="Chỉ hỗ trợ giải nén file .zip hoặc .rar"
-        )
-    
-    # Save the uploaded archive file
-    with tempfile.NamedTemporaryFile(delete=False, suffix=Path(filename).suffix) as tmp:
-        content = await file.read()
-        tmp.write(content)
-        archive_path = Path(tmp.name)
-        
-    extracted_files = []
-    # Create a unique subdirectory for this archive
     temp_sub_dir = Path(tempfile.mkdtemp(dir=EXTRACT_DIR))
+    extracted = []
+    created_dirs = [temp_sub_dir]
     
     try:
         if filename_lower.endswith(".zip"):
-            with zipfile.ZipFile(archive_path, 'r') as zip_ref:
+            with zipfile.ZipFile(archive_file_path, 'r') as zip_ref:
                 for zip_info in zip_ref.infolist():
                     if zip_info.filename.lower().endswith(".docx"):
-                        # Attempt to fix filename encoding (zipfile decodes non-UTF8 filenames as cp437)
                         orig_filename = zip_info.filename
                         try:
                             decoded_name = orig_filename.encode('cp437').decode('utf-8')
@@ -349,16 +340,20 @@ async def extract_archive(file: UploadFile = File(...)):
                         filename_only = Path(decoded_name).name
                         if filename_only and not filename_only.startswith("~$"):
                             target_path = temp_sub_dir / filename_only
+                            # Tránh ghi đè nếu trùng tên file trong zip
+                            counter = 1
+                            name_stem = target_path.stem
+                            name_ext = target_path.suffix
+                            while target_path.exists():
+                                target_path = temp_sub_dir / f"{name_stem}_{counter}{name_ext}"
+                                counter += 1
                             with zip_ref.open(zip_info) as source, open(target_path, "wb") as target:
                                 shutil.copyfileobj(source, target)
         elif filename_lower.endswith(".rar"):
             success = False
-            
-            # Find a suitable executable dynamically
             exe_path = None
             is_seven_zip = True
             
-            # 0. Search local directory first (e.g. static binary in backend root)
             for local_name in ["7zz", "backend/7zz"]:
                 local_path = Path(local_name)
                 if local_path.exists():
@@ -366,7 +361,6 @@ async def extract_archive(file: UploadFile = File(...)):
                     is_seven_zip = True
                     break
             
-            # 1. Search for 7-zip family in PATH
             if not exe_path:
                 for cmd_name in ["7z", "7zz", "7za"]:
                     found = shutil.which(cmd_name)
@@ -375,14 +369,12 @@ async def extract_archive(file: UploadFile = File(...)):
                         is_seven_zip = True
                         break
             
-            # 2. Search for unrar in PATH
             if not exe_path:
                 found = shutil.which("unrar")
                 if found:
                     exe_path = found
                     is_seven_zip = False
             
-            # 3. Fallback to hardcoded Windows default installation paths
             if not exe_path:
                 if Path(r"C:\Program Files\7-Zip\7z.exe").exists():
                     exe_path = r"C:\Program Files\7-Zip\7z.exe"
@@ -397,14 +389,13 @@ async def extract_archive(file: UploadFile = File(...)):
                         cmd = [
                             exe_path,
                             "x",
-                            str(archive_path),
+                            str(archive_file_path),
                             f"-o{temp_sub_dir}",
                             "*.docx",
                             "-r",
                             "-y"
                         ]
                     else:
-                        # Ensure trailing slash for unrar
                         output_dir_str = str(temp_sub_dir)
                         if not (output_dir_str.endswith("/") or output_dir_str.endswith("\\")):
                             output_dir_str += "/"
@@ -412,7 +403,7 @@ async def extract_archive(file: UploadFile = File(...)):
                             exe_path,
                             "x",
                             "-y",
-                            str(archive_path),
+                            str(archive_file_path),
                             "*.docx",
                             output_dir_str
                         ]
@@ -428,22 +419,57 @@ async def extract_archive(file: UploadFile = File(...)):
                     detail="Không thể giải nén file .rar trên máy chủ. Đảm bảo có cài đặt WinRAR hoặc 7-Zip."
                 )
                 
-        # Find all extracted .docx files
         for docx_file in temp_sub_dir.rglob("*.docx"):
             if not docx_file.name.startswith("~$"):
-                extracted_files.append({
-                    "filename": docx_file.name,
-                    "temp_path": str(docx_file.resolve()),
-                    "size": docx_file.stat().st_size
-                })
+                extracted.append((docx_file, docx_file.name))
                 
+        return extracted, created_dirs
+    except Exception:
+        # Dọn dẹp nếu có lỗi trong quá trình giải nén
+        for d in created_dirs:
+            if d.exists():
+                try:
+                    shutil.rmtree(d)
+                except OSError:
+                    pass
+        raise
+
+@router.post("/extract-archive")
+async def extract_archive(file: UploadFile = File(...)):
+    filename = file.filename
+    filename_lower = filename.lower()
+    if not (filename_lower.endswith(".zip") or filename_lower.endswith(".rar")):
+        raise HTTPException(
+            status_code=400,
+            detail="Chỉ hỗ trợ giải nén file .zip hoặc .rar"
+        )
+    
+    with tempfile.NamedTemporaryFile(delete=False, suffix=Path(filename).suffix) as tmp:
+        content = await file.read()
+        tmp.write(content)
+        archive_path = Path(tmp.name)
+        
+    created_subdirs = []
+    try:
+        extracted, created_subdirs = extract_single_archive(archive_path, filename)
+        files_info = []
+        for docx_file, name in extracted:
+            files_info.append({
+                "filename": name,
+                "temp_path": str(docx_file.resolve()),
+                "size": docx_file.stat().st_size
+            })
         return {
-            "message": f"Giải nén thành công, tìm thấy {len(extracted_files)} file .docx",
-            "files": extracted_files
+            "message": f"Giải nén thành công, tìm thấy {len(files_info)} tệp .docx",
+            "files": files_info
         }
     except Exception as e:
-        if temp_sub_dir.exists():
-            shutil.rmtree(temp_sub_dir)
+        for d in created_subdirs:
+            if d.exists():
+                try:
+                    shutil.rmtree(d)
+                except OSError:
+                    pass
         raise HTTPException(
             status_code=500,
             detail=f"Lỗi khi giải nén file: {str(e)}"
@@ -461,19 +487,38 @@ async def upload_vessel_documents(
 ):
     """
     API tiếp nhận nhiều file giấy chứng nhận (.docx) từ trình duyệt,
-    hoặc nhận các đường dẫn file tạm đã giải nén trên máy chủ,
+    hoặc nhận các file nén (.zip, .rar) và tự động giải nén trên máy chủ,
+    hoặc nhận các đường dẫn file tạm đã giải nén trước đó,
     thực hiện gọi bộ xử lý đa luồng và phản hồi kết quả về Frontend.
     """
     saved_temp_paths = []
+    created_subdirs = []
+    
     try:
         if files:
             for file in files:
-                if not file.filename.endswith('.docx'):
-                    continue
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
-                    content = await file.read()
-                    tmp.write(content)
-                    saved_temp_paths.append((Path(tmp.name), file.filename))
+                filename = file.filename
+                filename_lower = filename.lower()
+                
+                if filename_lower.endswith('.docx'):
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
+                        content = await file.read()
+                        tmp.write(content)
+                        saved_temp_paths.append((Path(tmp.name), filename))
+                        
+                elif filename_lower.endswith('.zip') or filename_lower.endswith('.rar'):
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=Path(filename).suffix) as tmp:
+                        content = await file.read()
+                        tmp.write(content)
+                        archive_path = Path(tmp.name)
+                    
+                    try:
+                        extracted, subdirs = extract_single_archive(archive_path, filename)
+                        saved_temp_paths.extend(extracted)
+                        created_subdirs.extend(subdirs)
+                    finally:
+                        if archive_path.exists():
+                            archive_path.unlink()
         
         if temp_paths:
             try:
@@ -496,20 +541,19 @@ async def upload_vessel_documents(
         
         from app.services.batch_processor import run_batch_processor_api
         processing_results = run_batch_processor_api(file_paths_with_names=saved_temp_paths, db=db, max_threads=4)
-        success_count = sum(1 for item in processing_results if item['status'] == 'Thành công')
+        success_count = sum(1 for item in processing_results if item['status'] in ('Thành công', 'Trùng lặp'))
         
         # Cleanup subdirectories for extracted temp files
-        if temp_paths:
-            dirs_to_delete = set()
-            for p, _ in saved_temp_paths:
-                if EXTRACT_DIR in p.parents:
-                    dirs_to_delete.add(p.parent)
-            for d in dirs_to_delete:
-                try:
-                    if d.exists():
-                        shutil.rmtree(d)
-                except OSError:
-                    pass
+        dirs_to_delete = set(created_subdirs)
+        for p, _ in saved_temp_paths:
+            if EXTRACT_DIR in p.parents:
+                dirs_to_delete.add(p.parent)
+        for d in dirs_to_delete:
+            try:
+                if d.exists():
+                    shutil.rmtree(d)
+            except OSError:
+                pass
                     
         return {
             "message": f"Xử lý hoàn tất {len(processing_results)} file tài liệu.",
@@ -519,6 +563,12 @@ async def upload_vessel_documents(
             "data": processing_results
         }
     except Exception as e:
+        for d in created_subdirs:
+            try:
+                if d.exists():
+                    shutil.rmtree(d)
+            except OSError:
+                pass
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
             detail=f"Lỗi máy chủ: {str(e)}"
@@ -571,7 +621,7 @@ async def generate_report(
         # 2. Phân tích các file và lưu thông tin vào CSDL
         from app.services.batch_processor import run_batch_processor_api
         results = run_batch_processor_api(file_paths_with_names=saved_temp_paths, db=db, max_threads=4)
-        success_count = sum(1 for item in results if item['status'] == 'Thành công')
+        success_count = sum(1 for item in results if item['status'] in ('Thành công', 'Trùng lặp'))
                 
         if success_count == 0:
             raise HTTPException(

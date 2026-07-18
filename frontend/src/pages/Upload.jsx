@@ -40,13 +40,14 @@ const Upload = () => {
       return lowerName.endsWith('.docx') || lowerName.endsWith('.zip') || lowerName.endsWith('.rar');
     });
     if (validFiles.length !== newFiles.length) {
-      alert("Chỉ chấp nhận file .docx, .zip hoặc .rar. Các file định dạng khác đã bị loại bỏ.");
+      alert("Chỉ chấp nhận file .docx, .zip hoặc .rar. Các tệp định dạng khác đã bị loại bỏ.");
     }
     
     const formatted = validFiles.map(f => {
       const lowerName = f.name.toLowerCase();
       const isArch = lowerName.endsWith('.zip') || lowerName.endsWith('.rar');
       return {
+        id: Math.random().toString(36).substr(2, 9),
         name: f.name,
         size: f.size,
         isArchive: isArch,
@@ -58,8 +59,8 @@ const Upload = () => {
     setFiles(prev => [...prev, ...formatted]);
   };
 
-  const removeFile = (index) => {
-    setFiles(prev => prev.filter((_, i) => i !== index));
+  const removeFile = (id) => {
+    setFiles(prev => prev.filter(f => f.id !== id));
   };
 
   const formatSize = (bytes) => {
@@ -70,57 +71,12 @@ const Upload = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const handleExtract = async (index) => {
-    const targetFile = files[index];
-    if (!targetFile || !targetFile.isArchive) return;
-    
-    setFiles(prev => prev.map((f, i) => i === index ? { ...f, isExtracting: true } : f));
-    
-    const formData = new FormData();
-    formData.append('file', targetFile.fileObj);
-    
-    const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-    try {
-      const response = await fetch(`${API_BASE}/reports/extract-archive`, {
-        method: 'POST',
-        body: formData,
-      });
-      
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.detail || 'Giải nén thất bại');
-      }
-      
-      if (data.files && data.files.length > 0) {
-        const extracted = data.files.map(f => ({
-          name: f.filename,
-          size: f.size,
-          isArchive: false,
-          temp_path: f.temp_path,
-          extractedFrom: targetFile.name
-        }));
-        
-        setFiles(prev => {
-          const next = [...prev];
-          next.splice(index, 1, ...extracted);
-          return next;
-        });
-      } else {
-        alert("Không tìm thấy file .docx nào bên trong file nén.");
-        setFiles(prev => prev.filter((_, i) => i !== index));
-      }
-    } catch (error) {
-      alert("Lỗi giải nén: " + error.message);
-      setFiles(prev => prev.map((f, i) => i === index ? { ...f, isExtracting: false } : f));
-    }
-  };
-
   const handleProcess = async () => {
-    const localDocx = files.filter(f => !f.isArchive && f.fileObj);
-    const tempPaths = files.filter(f => !f.isArchive && f.temp_path).map(f => f.temp_path);
+    const localFiles = files.filter(f => f.fileObj);
+    const tempPaths = files.filter(f => f.temp_path).map(f => f.temp_path);
     
-    if (localDocx.length === 0 && tempPaths.length === 0) {
-      alert("Vui lòng giải nén các file archive trước hoặc chọn ít nhất một file .docx để xử lý.");
+    if (localFiles.length === 0 && tempPaths.length === 0) {
+      alert("Vui lòng tải ít nhất một file .docx, .zip hoặc .rar để xử lý.");
       return;
     }
     
@@ -128,7 +84,7 @@ const Upload = () => {
     setResults(null);
 
     const formData = new FormData();
-    localDocx.forEach(f => {
+    localFiles.forEach(f => {
       formData.append('files', f.fileObj);
     });
     
@@ -157,8 +113,6 @@ const Upload = () => {
     }
   };
 
-  const hasArchive = files.some(f => f.isArchive);
-
   return (
     <div className={styles.uploadPage}>
       
@@ -172,7 +126,7 @@ const Upload = () => {
         >
           <UploadCloud className={styles.dropIcon} size={48} />
           <h3 className={styles.dropText}>Kéo thả file .docx, .zip, .rar vào đây</h3>
-          <p className={styles.dropSubtext}>Hỗ trợ tự giải nén và xử lý hàng loạt</p>
+          <p className={styles.dropSubtext}>Tự động giải nén và xử lý hàng loạt</p>
           
           <div className={styles.divider}>hoặc</div>
           
@@ -197,12 +151,12 @@ const Upload = () => {
               <Button size="sm" variant="ghost" onClick={() => setFiles([])}>Xóa tất cả</Button>
             </div>
             
-            {files.map((file, idx) => {
+            {files.map((file) => {
               const isArchive = file.isArchive;
               const isZip = file.name.toLowerCase().endsWith('.zip');
               
               return (
-                <div key={idx} className={`${styles.fileItem} ${isArchive ? styles.archiveItem : ''}`}>
+                <div key={file.id} className={`${styles.fileItem} ${isArchive ? styles.archiveItem : ''}`}>
                   <FileText 
                     className={styles.fileIcon} 
                     size={20} 
@@ -218,17 +172,7 @@ const Upload = () => {
                   </div>
                   
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {isArchive && (
-                      <button 
-                        type="button" 
-                        className={styles.extractBtn}
-                        onClick={() => handleExtract(idx)}
-                        disabled={file.isExtracting}
-                      >
-                        {file.isExtracting ? 'Đang giải nén...' : 'Giải nén'}
-                      </button>
-                    )}
-                    <button className={styles.removeBtn} onClick={() => removeFile(idx)}>
+                    <button className={styles.removeBtn} onClick={() => removeFile(file.id)}>
                       <X size={16} />
                     </button>
                   </div>
@@ -241,11 +185,11 @@ const Upload = () => {
         <Button 
           size="lg" 
           onClick={handleProcess} 
-          disabled={files.length === 0 || processing || hasArchive}
+          disabled={files.length === 0 || processing}
           loading={processing}
           icon={Server}
         >
-          {processing ? 'Đang xử lý...' : hasArchive ? 'Vui lòng giải nén trước khi lưu' : 'Xử lý & Lưu vào DB'}
+          {processing ? 'Đang xử lý...' : 'Xử lý & Lưu vào DB'}
         </Button>
       </div>
 
@@ -265,7 +209,7 @@ const Upload = () => {
           <div className={styles.resultsList}>
             {results.data.map((res, idx) => {
               const isSuccess = res.status === 'Thành công';
-              const isSkip = res.status === 'Đã tồn tại, bỏ qua';
+              const isSkip = res.status === 'Đã tồn tại, bỏ qua' || res.status === 'Trùng lặp';
               const Icon = isSuccess ? CheckCircle : isSkip ? AlertTriangle : XCircle;
               const iconColor = isSuccess ? 'var(--success)' : isSkip ? 'var(--warning)' : 'var(--error)';
 
